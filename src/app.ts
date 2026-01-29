@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import hpp from 'hpp';
+import cookieParser from 'cookie-parser';
 
 import errorHandler from './middlewares/error.middleware.js';
 import routes from './routes/index.js';
@@ -28,6 +29,7 @@ app.use('/api', limiter);
 // Body parser
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Data sanitization
 app.use(hpp());

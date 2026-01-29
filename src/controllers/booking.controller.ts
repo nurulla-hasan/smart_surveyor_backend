@@ -9,6 +9,7 @@ export const getBookings = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const filter = (req.query.filter as string) || 'all';
+  const dateStr = req.query.date as string | undefined;
   const page = parseInt(req.query.page as string) || 1;
   const pageSize = parseInt(req.query.pageSize as string) || 10;
   const userId = req.user.id;
@@ -18,11 +19,23 @@ export const getBookings = asyncHandler(async (req: Request, res: Response) => {
 
   const where: any = { userId };
 
+  // Date filter logic
+  if (dateStr) {
+    const startDate = new Date(dateStr);
+    startDate.setHours(0, 0, 0, 0);
+    
+    const endDate = new Date(dateStr);
+    endDate.setHours(23, 59, 59, 999);
+    
+    where.bookingDate = { gte: startDate, lte: endDate };
+  }
+
+  // Status filter logic
   if (filter === 'upcoming') {
-    where.bookingDate = { gte: today };
+    if (!dateStr) where.bookingDate = { gte: today };
     where.status = { not: 'pending' as BookingStatus };
   } else if (filter === 'past') {
-    where.bookingDate = { lt: today };
+    if (!dateStr) where.bookingDate = { lt: today };
     where.status = { not: 'pending' as BookingStatus };
   } else if (filter === 'pending') {
     where.status = 'pending' as BookingStatus;
@@ -43,9 +56,12 @@ export const getBookings = asyncHandler(async (req: Request, res: Response) => {
 
   res.status(200).json(new ApiResponse(200, {
     bookings,
-    totalPages: Math.ceil(totalCount / pageSize),
-    totalCount,
-    currentPage: page
+    meta: {
+      totalItems: totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page,
+      pageSize: pageSize
+    }
   }, 'Bookings fetched successfully'));
 });
 

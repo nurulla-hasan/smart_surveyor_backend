@@ -1,5 +1,5 @@
 import { prisma } from '../lib/prisma.js';
-import { hashPassword, comparePassword, generateToken } from '../utils/auth.js';
+import { hashPassword, comparePassword, generateToken, generateRefreshToken, verifyRefreshToken } from '../utils/auth.js';
 import ApiError from '../utils/ApiError.js';
 
 export class AuthService {
@@ -15,13 +15,25 @@ export class AuthService {
       data: {
         ...data,
         password: hashedPassword
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        phone: true,
+        companyName: true,
+        licenseNo: true,
+        address: true,
+        createdAt: true,
+        updatedAt: true
       }
     });
 
-    const { password, ...userWithoutPassword } = user;
-    const token = generateToken(user.id, user.role);
+    const accessToken = generateToken(user);
+    const refreshToken = generateRefreshToken(user.id);
 
-    return { user: userWithoutPassword, token };
+    return { accessToken, refreshToken };
   }
 
   static async login(email: string, passwordText: string) {
@@ -37,9 +49,39 @@ export class AuthService {
       throw new ApiError(401, 'Invalid credentials');
     }
 
-    const { password, ...userWithoutPassword } = user;
-    const token = generateToken(user.id, user.role);
+    const accessToken = generateToken(user);
+    const refreshToken = generateRefreshToken(user.id);
 
-    return { user: userWithoutPassword, token };
+    return { accessToken, refreshToken };
+  }
+
+  static async refreshToken(token: string) {
+    try {
+      const decoded = verifyRefreshToken(token);
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          phone: true,
+          companyName: true,
+          licenseNo: true,
+          address: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      });
+
+      if (!user) {
+        throw new ApiError(401, 'User not found');
+      }
+
+      const accessToken = generateToken(user);
+      return { accessToken };
+    } catch (error) {
+      throw new ApiError(401, 'Invalid refresh token');
+    }
   }
 }

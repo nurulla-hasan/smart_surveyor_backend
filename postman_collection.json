@@ -1,8 +1,8 @@
 {
 	"info": {
-		"_postman_id": "a1b2c3d4-e5f6-4a5b-b6c7-d8e9f0a1b2c3",
-		"name": "Smart Surveyor API - Full",
-		"description": "Full Postman collection for Smart Surveyor REST API including all modules",
+		"_postman_id": "smart-surveyor-api",
+		"name": "Smart Surveyor API - Full Copy",
+		"description": "API documentation for the Smart Surveyor backend. Paginated responses include a `meta` object with `totalItems`, `totalPages`, `currentPage`, and `pageSize`.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -16,7 +16,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"surveyor\"\n}",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"surveyor\",\n    \"phone\": \"+123456789\",\n    \"companyName\": \"Survey Corp\",\n    \"licenseNo\": \"LIC-123\",\n    \"address\": \"123 Survey St\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -32,7 +32,8 @@
 								"auth",
 								"register"
 							]
-						}
+						},
+						"description": "Register a new user (Surveyor, Client, or Admin)"
 					},
 					"response": []
 				},
@@ -44,8 +45,11 @@
 							"script": {
 								"exec": [
 									"var jsonData = JSON.parse(responseBody);",
-									"if (jsonData.token) {",
-									"    pm.environment.set(\"auth_token\", jsonData.token);",
+									"if (jsonData.data && jsonData.data.accessToken) {",
+									"    pm.collectionVariables.set(\"auth_token\", jsonData.data.accessToken);",
+									"    if (jsonData.data.refreshToken) {",
+									"        pm.collectionVariables.set(\"refresh_token\", jsonData.data.refreshToken);",
+									"    }",
 									"}"
 								],
 								"type": "text/javascript"
@@ -73,7 +77,8 @@
 								"auth",
 								"login"
 							]
-						}
+						},
+						"description": "Login to get access and refresh tokens. Tokens are automatically saved to environment variables."
 					},
 					"response": []
 				},
@@ -97,7 +102,8 @@
 								"auth",
 								"me"
 							]
-						}
+						},
+						"description": "Get current logged-in user profile from JWT payload."
 					},
 					"response": []
 				},
@@ -115,7 +121,53 @@
 								"auth",
 								"logout"
 							]
+						},
+						"description": "Logout user and clear cookies."
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"if (jsonData.data && jsonData.data.accessToken) {",
+									"    pm.collectionVariables.set(\"auth_token\", jsonData.data.accessToken);",
+									"}",
+									"if (jsonData.data && jsonData.data.refreshToken) {",
+									"    pm.collectionVariables.set(\"refresh_token\", jsonData.data.refreshToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
 						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refreshToken\": \"{{refresh_token}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/refresh-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"refresh-token"
+							]
+						},
+						"description": "Get a new access token using a valid refresh token."
 					},
 					"response": []
 				}
@@ -144,7 +196,8 @@
 								"users",
 								"profile"
 							]
-						}
+						},
+						"description": "Get full user profile from database."
 					},
 					"response": []
 				},
@@ -161,7 +214,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"John Updated\",\n    \"email\": \"john.updated@example.com\"\n}",
+							"raw": "{\n    \"name\": \"John Updated\",\n    \"phone\": \"+987654321\",\n    \"address\": \"456 New St\",\n    \"companyName\": \"New Survey Corp\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -177,7 +230,8 @@
 								"users",
 								"profile"
 							]
-						}
+						},
+						"description": "Update user profile information."
 					},
 					"response": []
 				}
@@ -198,38 +252,37 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/bookings",
+							"raw": "{{base_url}}/bookings?filter=all&page=1&pageSize=10",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"bookings"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Upcoming Bookings",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/bookings/upcoming",
-							"host": [
-								"{{base_url}}"
 							],
-							"path": [
-								"bookings",
-								"upcoming"
+							"query": [
+								{
+									"key": "filter",
+									"value": "all",
+									"description": "Filter by status: upcoming (Scheduled), pending (Requests), past (History), or all"
+								},
+								{
+									"key": "date",
+									"value": "",
+									"description": "Filter by specific date (YYYY-MM-DD)"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Current page number"
+								},
+								{
+									"key": "pageSize",
+									"value": "10",
+									"description": "Number of items per page"
+								}
 							]
-						}
+						},
+						"description": "Get paginated bookings. Use `date` for specific day filter (YYYY-MM-DD). Filters align with app tabs: upcoming (Upcoming), pending (Requests), past (History)."
 					},
 					"response": []
 				},
@@ -246,7 +299,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"clientId\": \"REPLACE_WITH_CLIENT_ID\",\n    \"title\": \"Survey for Plot A\",\n    \"description\": \"Detailed survey requirement\",\n    \"bookingDate\": \"2024-02-15T10:00:00Z\",\n    \"propertyAddress\": \"123 Main St, City\",\n    \"amountReceived\": 500,\n    \"amountDue\": 1000\n}",
+							"raw": "{\n    \"clientName\": \"Jane Smith\",\n    \"clientPhone\": \"+1234567890\",\n    \"title\": \"Survey for Plot A\",\n    \"description\": \"Detailed survey requirement\",\n    \"bookingDate\": \"2026-02-15T10:00:00Z\",\n    \"propertyAddress\": \"123 Main St, City\",\n    \"amountReceived\": 500,\n    \"amountDue\": 1000,\n    \"paymentNote\": \"Partial payment received\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -261,7 +314,8 @@
 							"path": [
 								"bookings"
 							]
-						}
+						},
+						"description": "Create a new booking. Automatically creates or links to a client by name."
 					},
 					"response": []
 				},
@@ -291,7 +345,8 @@
 									"value": "REPLACE_WITH_BOOKING_ID"
 								}
 							]
-						}
+						},
+						"description": "Get detailed information for a specific booking."
 					},
 					"response": []
 				},
@@ -308,7 +363,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"status\": \"completed\",\n    \"amountReceived\": 1500,\n    \"amountDue\": 0\n}",
+							"raw": "{\n    \"title\": \"Updated Title\",\n    \"status\": \"completed\",\n    \"amountReceived\": 1500,\n    \"amountDue\": 0,\n    \"paymentNote\": \"Full payment cleared\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -330,7 +385,8 @@
 									"value": "REPLACE_WITH_BOOKING_ID"
 								}
 							]
-						}
+						},
+						"description": "Update booking status or financial details."
 					},
 					"response": []
 				},
@@ -360,7 +416,8 @@
 									"value": "REPLACE_WITH_BOOKING_ID"
 								}
 							]
-						}
+						},
+						"description": "Remove a booking record."
 					},
 					"response": []
 				}
@@ -381,14 +438,32 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/clients",
+							"raw": "{{base_url}}/clients?search=&page=1&pageSize=10",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"clients"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search by name or email"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Current page number"
+								},
+								{
+									"key": "pageSize",
+									"value": "10",
+									"description": "Number of items per page"
+								}
 							]
-						}
+						},
+						"description": "Get list of clients with search and pagination."
 					},
 					"response": []
 				},
@@ -420,7 +495,8 @@
 							"path": [
 								"clients"
 							]
-						}
+						},
+						"description": "Manually create a new client record."
 					},
 					"response": []
 				},
@@ -450,7 +526,8 @@
 									"value": "REPLACE_WITH_CLIENT_ID"
 								}
 							]
-						}
+						},
+						"description": "Get profile and booking history for a specific client."
 					},
 					"response": []
 				}
@@ -471,14 +548,27 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/reports",
+							"raw": "{{base_url}}/reports?page=1&pageSize=10",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"reports"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Current page number"
+								},
+								{
+									"key": "pageSize",
+									"value": "10",
+									"description": "Number of items per page"
+								}
 							]
-						}
+						},
+						"description": "Get paginated list of reports generated by the surveyor."
 					},
 					"response": []
 				},
@@ -495,7 +585,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"bookingId\": \"REPLACE_WITH_BOOKING_ID\",\n    \"title\": \"Survey Report A\",\n    \"content\": \"Full survey details...\",\n    \"status\": \"draft\"\n}",
+							"raw": "{\n    \"clientId\": \"REPLACE_WITH_CLIENT_ID\",\n    \"bookingId\": \"REPLACE_WITH_BOOKING_ID\",\n    \"title\": \"Survey Report - Torimpur - 88\",\n    \"content\": \"Full survey details and findings...\",\n    \"mouzaName\": \"Torimpur\",\n    \"plotNo\": \"88\",\n    \"areaSqFt\": 43560,\n    \"areaKatha\": 60,\n    \"areaDecimal\": 100,\n    \"notes\": \"The land is flat and suitable for construction.\",\n    \"fileUrl\": \"https://example.com/report.pdf\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -510,7 +600,8 @@
 							"path": [
 								"reports"
 							]
-						}
+						},
+						"description": "Create a new survey report linked to a booking."
 					},
 					"response": []
 				}
@@ -538,7 +629,8 @@
 							"path": [
 								"calculations"
 							]
-						}
+						},
+						"description": "Get saved area/distance calculations."
 					},
 					"response": []
 				},
@@ -555,7 +647,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"title\": \"Area Calculation Plot X\",\n    \"type\": \"area\",\n    \"data\": { \"points\": [], \"result\": 500 }\n}",
+							"raw": "{\n    \"title\": \"Area Calculation Plot X\",\n    \"type\": \"area\",\n    \"data\": { \"points\": [{\"lat\": 23.8, \"lng\": 90.4}], \"result\": 500 }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -570,7 +662,8 @@
 							"path": [
 								"calculations"
 							]
-						}
+						},
+						"description": "Save a new calculation result."
 					},
 					"response": []
 				}
@@ -598,7 +691,8 @@
 							"path": [
 								"maps"
 							]
-						}
+						},
+						"description": "Get list of saved map projects."
 					},
 					"response": []
 				},
@@ -615,7 +709,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Project Map A\",\n    \"center\": { \"lat\": 23.8103, \"lng\": 90.4125 },\n    \"zoom\": 15,\n    \"markers\": []\n}",
+							"raw": "{\n    \"name\": \"Plot A Boundary\",\n    \"data\": {\n        \"type\": \"FeatureCollection\",\n        \"features\": []\n    },\n    \"fileUrl\": \"https://example.com/map-data.kml\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -630,7 +724,8 @@
 							"path": [
 								"maps"
 							]
-						}
+						},
+						"description": "Save a map state with markers and center points."
 					},
 					"response": []
 				}
@@ -651,14 +746,27 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/blocked-dates",
+							"raw": "{{base_url}}/blocked-dates?month=&year=",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"blocked-dates"
+							],
+							"query": [
+								{
+									"key": "month",
+									"value": "",
+									"description": "Optional: Filter by month (1-12)"
+								},
+								{
+									"key": "year",
+									"value": "",
+									"description": "Optional: Filter by year (e.g., 2026)"
+								}
 							]
-						}
+						},
+						"description": "Get blocked dates. Can be filtered by month and year for calendar views."
 					},
 					"response": []
 				},
@@ -675,7 +783,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"date\": \"2024-02-20\",\n    \"reason\": \"Holiday\"\n}",
+							"raw": "{\n    \"date\": \"2026-02-20\",\n    \"reason\": \"Holiday/Personal Leave\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -691,7 +799,8 @@
 								"blocked-dates",
 								"toggle"
 							]
-						}
+						},
+						"description": "Block or unblock a specific date for bookings."
 					},
 					"response": []
 				}
@@ -720,7 +829,8 @@
 								"dashboard",
 								"stats"
 							]
-						}
+						},
+						"description": "Get high-level statistics, recent activities, and pending requests for the dashboard."
 					},
 					"response": []
 				},
@@ -736,15 +846,23 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/dashboard/monthly-stats",
+							"raw": "{{base_url}}/dashboard/monthly-stats?year=",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"dashboard",
 								"monthly-stats"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "",
+									"description": "Optional: Filter by year (defaults to current year)"
+								}
 							]
-						}
+						},
+						"description": "Get booking statistics grouped by month for charts. Can be filtered by year."
 					},
 					"response": []
 				}
@@ -758,6 +876,10 @@
 		},
 		{
 			"key": "auth_token",
+			"value": ""
+		},
+		{
+			"key": "refresh_token",
 			"value": ""
 		}
 	]

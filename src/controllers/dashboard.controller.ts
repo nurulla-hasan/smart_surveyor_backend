@@ -9,10 +9,31 @@ export const getStats = asyncHandler(async (req: Request, res: Response) => {
 
   const userId = req.user.id;
 
-  const [totalBookings, activeClients, reportsGenerated, bookings] = await Promise.all([
+  const [
+    totalBookings, 
+    activeClients, 
+    reportsGenerated, 
+    completedBookings,
+    pendingRequests,
+    recentActivities,
+    bookings
+  ] = await Promise.all([
     prisma.booking.count({ where: { userId } }),
     prisma.client.count({ where: { userId } }),
     prisma.report.count({ where: { userId } }),
+    prisma.booking.count({ where: { userId, status: 'completed' } }),
+    prisma.booking.findMany({
+      where: { userId, status: 'pending' },
+      take: 5,
+      include: { client: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.booking.findMany({
+      where: { userId },
+      take: 5,
+      include: { client: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' }
+    }),
     prisma.booking.findMany({ 
       where: { userId },
       select: { amountReceived: true, amountDue: true } 
@@ -26,8 +47,11 @@ export const getStats = asyncHandler(async (req: Request, res: Response) => {
     totalBookings,
     activeClients,
     reportsGenerated,
+    completedBookings,
     totalIncome,
-    totalDue
+    totalDue,
+    pendingRequests,
+    recentActivities
   }, 'Dashboard stats fetched successfully'));
 });
 
@@ -35,9 +59,9 @@ export const getMonthlyStats = asyncHandler(async (req: Request, res: Response) 
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const userId = req.user.id;
-  const currentYear = new Date().getFullYear();
-  const startDate = new Date(currentYear, 0, 1);
-  const endDate = new Date(currentYear, 11, 31);
+  const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
 
   const bookings = await prisma.booking.findMany({
     where: {

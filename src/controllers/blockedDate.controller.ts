@@ -7,9 +7,25 @@ import ApiError from '../utils/ApiError.js';
 export const getBlockedDates = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
+  const month = req.query.month ? parseInt(req.query.month as string) : undefined;
+  const year = req.query.year ? parseInt(req.query.year as string) : undefined;
+  
+  const where: any = { userId: req.user.id };
+
+  if (month !== undefined && year !== undefined) {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+    where.date = { gte: startDate, lte: endDate };
+  } else if (year !== undefined) {
+    const startDate = new Date(year, 0, 1);
+    const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
+    where.date = { gte: startDate, lte: endDate };
+  }
+
   const dates = await prisma.blockedDate.findMany({
-    where: { userId: req.user.id },
-    select: { id: true, date: true, reason: true }
+    where,
+    select: { id: true, date: true, reason: true },
+    orderBy: { date: 'asc' }
   });
 
   const formattedDates = dates.map(d => ({

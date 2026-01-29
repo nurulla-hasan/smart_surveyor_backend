@@ -36,9 +36,12 @@ export const getClients = asyncHandler(async (req: Request, res: Response) => {
 
   res.status(200).json(new ApiResponse(200, {
     clients,
-    totalPages: Math.ceil(totalCount / pageSize),
-    totalCount,
-    currentPage: page
+    meta: {
+      totalItems: totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page,
+      pageSize: pageSize
+    }
   }, 'Clients fetched successfully'));
 });
 

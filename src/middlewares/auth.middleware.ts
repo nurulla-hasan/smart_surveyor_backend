@@ -31,8 +31,11 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
 
     req.user = user;
     next();
-  } catch (err) {
-    throw new ApiError(401, 'Not authorized to access this route');
+  } catch (err: any) {
+    const message = process.env.NODE_ENV === 'development' 
+      ? `Not authorized: ${err.message}` 
+      : 'Not authorized to access this route';
+    throw new ApiError(401, message);
   }
 });
 

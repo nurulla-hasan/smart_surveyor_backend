@@ -26,9 +26,12 @@ export const getReports = asyncHandler(async (req: Request, res: Response) => {
 
   res.status(200).json(new ApiResponse(200, {
     reports,
-    totalPages: Math.ceil(totalCount / pageSize),
-    totalCount,
-    currentPage: page
+    meta: {
+      totalItems: totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page,
+      pageSize: pageSize
+    }
   }, 'Reports fetched successfully'));
 });
 
@@ -53,7 +56,10 @@ export const getReport = asyncHandler(async (req: Request, res: Response) => {
 export const createReport = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
-  const { title, content, clientId, bookingId, fileUrl } = req.body;
+  const { 
+    title, content, clientId, bookingId, fileUrl,
+    mouzaName, plotNo, areaSqFt, areaKatha, areaDecimal, notes
+  } = req.body;
 
   const client = await prisma.client.findFirst({
     where: { id: clientId, userId: req.user.id }
@@ -69,6 +75,12 @@ export const createReport = asyncHandler(async (req: Request, res: Response) => 
       bookingId,
       title,
       content,
+      mouzaName,
+      plotNo,
+      areaSqFt: areaSqFt ? parseFloat(areaSqFt) : undefined,
+      areaKatha: areaKatha ? parseFloat(areaKatha) : undefined,
+      areaDecimal: areaDecimal ? parseFloat(areaDecimal) : undefined,
+      notes,
       fileUrl
     },
     include: { client: true }
@@ -88,9 +100,14 @@ export const updateReport = asyncHandler(async (req: Request, res: Response) => 
     throw new ApiError(404, 'Report not found');
   }
 
+  const data = { ...req.body };
+  if (data.areaSqFt) data.areaSqFt = parseFloat(data.areaSqFt);
+  if (data.areaKatha) data.areaKatha = parseFloat(data.areaKatha);
+  if (data.areaDecimal) data.areaDecimal = parseFloat(data.areaDecimal);
+
   const updatedReport = await prisma.report.update({
     where: { id: req.params.id },
-    data: req.body,
+    data,
     include: { client: true }
   });
 

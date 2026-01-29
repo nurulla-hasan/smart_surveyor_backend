@@ -18,13 +18,14 @@ export const getMaps = asyncHandler(async (req: Request, res: Response) => {
 export const saveMap = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
-  const { name, data } = req.body;
+  const { name, data, fileUrl } = req.body;
 
   const map = await prisma.savedMap.create({
     data: {
       userId: req.user.id,
       name,
-      data
+      data,
+      fileUrl
     }
   });
 
