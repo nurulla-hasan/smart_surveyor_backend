@@ -49,7 +49,7 @@ export const getClient = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const client = await prisma.client.findFirst({
-    where: { id: req.params.id, userId: req.user.id }
+    where: { id: req.params.id as string, userId: req.user.id }
   });
 
   if (!client) {
@@ -91,7 +91,7 @@ export const updateClient = asyncHandler(async (req: Request, res: Response) => 
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const client = await prisma.client.findFirst({
-    where: { id: req.params.id, userId: req.user.id }
+    where: { id: req.params.id as string, userId: req.user.id }
   });
 
   if (!client) {
@@ -99,7 +99,7 @@ export const updateClient = asyncHandler(async (req: Request, res: Response) => 
   }
 
   const updatedClient = await prisma.client.update({
-    where: { id: req.params.id },
+    where: { id: req.params.id as string },
     data: req.body
   });
 
@@ -110,7 +110,7 @@ export const deleteClient = asyncHandler(async (req: Request, res: Response) => 
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const client = await prisma.client.findFirst({
-    where: { id: req.params.id, userId: req.user.id }
+    where: { id: req.params.id as string, userId: req.user.id }
   });
 
   if (!client) {
@@ -118,7 +118,7 @@ export const deleteClient = asyncHandler(async (req: Request, res: Response) => 
   }
 
   await prisma.client.delete({
-    where: { id: req.params.id }
+    where: { id: req.params.id as string }
   });
 
   res.status(200).json(new ApiResponse(200, {}, 'Client deleted successfully'));

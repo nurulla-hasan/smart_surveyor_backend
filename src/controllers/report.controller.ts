@@ -39,7 +39,7 @@ export const getReport = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const report = await prisma.report.findFirst({
-    where: { id: req.params.id, userId: req.user.id },
+    where: { id: req.params.id as string, userId: req.user.id },
     include: { 
       client: { select: { id: true, name: true, email: true, phone: true } },
       booking: { select: { id: true, title: true, bookingDate: true } }
@@ -77,9 +77,9 @@ export const createReport = asyncHandler(async (req: Request, res: Response) => 
       content,
       mouzaName,
       plotNo,
-      areaSqFt: areaSqFt ? parseFloat(areaSqFt) : undefined,
-      areaKatha: areaKatha ? parseFloat(areaKatha) : undefined,
-      areaDecimal: areaDecimal ? parseFloat(areaDecimal) : undefined,
+      areaSqFt: areaSqFt ? parseFloat(areaSqFt) : null,
+      areaKatha: areaKatha ? parseFloat(areaKatha) : null,
+      areaDecimal: areaDecimal ? parseFloat(areaDecimal) : null,
       notes,
       fileUrl
     },
@@ -93,7 +93,7 @@ export const updateReport = asyncHandler(async (req: Request, res: Response) => 
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const report = await prisma.report.findFirst({
-    where: { id: req.params.id, userId: req.user.id }
+    where: { id: req.params.id as string, userId: req.user.id }
   });
 
   if (!report) {
@@ -106,7 +106,7 @@ export const updateReport = asyncHandler(async (req: Request, res: Response) => 
   if (data.areaDecimal) data.areaDecimal = parseFloat(data.areaDecimal);
 
   const updatedReport = await prisma.report.update({
-    where: { id: req.params.id },
+    where: { id: req.params.id as string },
     data,
     include: { client: true }
   });
@@ -118,7 +118,7 @@ export const deleteReport = asyncHandler(async (req: Request, res: Response) => 
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const report = await prisma.report.findFirst({
-    where: { id: req.params.id, userId: req.user.id }
+    where: { id: req.params.id as string, userId: req.user.id }
   });
 
   if (!report) {
@@ -126,7 +126,7 @@ export const deleteReport = asyncHandler(async (req: Request, res: Response) => 
   }
 
   await prisma.report.delete({
-    where: { id: req.params.id }
+    where: { id: req.params.id as string }
   });
 
   res.status(200).json(new ApiResponse(200, {}, 'Report deleted successfully'));

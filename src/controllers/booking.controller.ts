@@ -69,7 +69,7 @@ export const getBooking = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const booking = await prisma.booking.findFirst({
-    where: { id: req.params.id, userId: req.user.id },
+    where: { id: req.params.id as string, userId: req.user.id },
     include: { client: true }
   });
 
@@ -140,7 +140,7 @@ export const updateBooking = asyncHandler(async (req: Request, res: Response) =>
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const booking = await prisma.booking.findFirst({
-    where: { id: req.params.id, userId: req.user.id }
+    where: { id: req.params.id as string, userId: req.user.id }
   });
 
   if (!booking) {
@@ -173,7 +173,7 @@ export const updateBooking = asyncHandler(async (req: Request, res: Response) =>
   if (data.status) data.status = data.status as BookingStatus;
 
   const updatedBooking = await prisma.booking.update({
-    where: { id: req.params.id },
+    where: { id: req.params.id as string },
     data,
     include: { client: true }
   });
@@ -185,7 +185,7 @@ export const deleteBooking = asyncHandler(async (req: Request, res: Response) =>
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const booking = await prisma.booking.findFirst({
-    where: { id: req.params.id, userId: req.user.id }
+    where: { id: req.params.id as string, userId: req.user.id }
   });
 
   if (!booking) {
@@ -193,7 +193,7 @@ export const deleteBooking = asyncHandler(async (req: Request, res: Response) =>
   }
 
   await prisma.booking.delete({
-    where: { id: req.params.id }
+    where: { id: req.params.id as string }
   });
 
   res.status(200).json(new ApiResponse(200, {}, 'Booking deleted successfully'));

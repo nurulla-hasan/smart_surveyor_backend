@@ -36,7 +36,7 @@ export const deleteMap = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const map = await prisma.savedMap.findFirst({
-    where: { id: req.params.id, userId: req.user.id }
+    where: { id: req.params.id as string, userId: req.user.id }
   });
 
   if (!map) {
@@ -44,7 +44,7 @@ export const deleteMap = asyncHandler(async (req: Request, res: Response) => {
   }
 
   await prisma.savedMap.delete({
-    where: { id: req.params.id }
+    where: { id: req.params.id as string }
   });
 
   res.status(200).json(new ApiResponse(200, {}, 'Map deleted successfully'));

@@ -38,7 +38,7 @@ export const deleteCalculation = asyncHandler(async (req: Request, res: Response
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const calculation = await prisma.calculation.findFirst({
-    where: { id: req.params.id, userId: req.user.id }
+    where: { id: req.params.id as string, userId: req.user.id }
   });
 
   if (!calculation) {
@@ -46,7 +46,7 @@ export const deleteCalculation = asyncHandler(async (req: Request, res: Response
   }
 
   await prisma.calculation.delete({
-    where: { id: req.params.id }
+    where: { id: req.params.id as string }
   });
 
   res.status(200).json(new ApiResponse(200, {}, 'Calculation deleted successfully'));
