@@ -840,15 +840,25 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/maps",
+							"raw": "{{base_url}}/maps?page=1&pageSize=10",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"maps"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								}
 							]
 						},
-						"description": "Get list of saved map projects."
+						"description": "Get all saved maps for the logged-in surveyor with pagination."
 					},
 					"response": []
 				},
@@ -897,16 +907,26 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/maps/shared",
+							"raw": "{{base_url}}/maps/shared?page=1&pageSize=10",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"maps",
 								"shared"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								}
 							]
 						},
-						"description": "For clients to see GeoJSON maps shared by surveyors for their bookings."
+						"description": "For clients to see GeoJSON maps shared by surveyors for their bookings with pagination."
 					},
 					"response": []
 				}
