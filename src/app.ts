@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import hpp from 'hpp';
+import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 
 import errorHandler from './middlewares/error.middleware.js';
@@ -18,10 +19,15 @@ app.use(cors({
   credentials: true
 }));
 
+// Request logging
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, 
-  max: Number(process.env.RATE_LIMIT_MAX) || 100,
+  max: process.env.NODE_ENV === 'development' ? 10000 : (Number(process.env.RATE_LIMIT_MAX) || 100),
   message: 'Too many requests, please try again later'
 });
 app.use('/api', limiter);

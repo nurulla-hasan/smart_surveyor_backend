@@ -19,11 +19,12 @@ export const getCalculations = asyncHandler(async (req: Request, res: Response) 
 export const saveCalculation = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
-  const { type, inputData, resultData, bookingId } = req.body;
+  const { title, type, inputData, resultData, bookingId } = req.body;
 
   const calculation = await prisma.calculation.create({
     data: {
       userId: req.user.id,
+      title,
       bookingId,
       type,
       inputData,

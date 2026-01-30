@@ -18,11 +18,12 @@ export const getMaps = asyncHandler(async (req: Request, res: Response) => {
 export const saveMap = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
-  const { name, data, fileUrl } = req.body;
+  const { name, data, fileUrl, bookingId } = req.body;
 
   const map = await prisma.savedMap.create({
     data: {
       userId: req.user.id,
+      bookingId: bookingId || null,
       name,
       data,
       fileUrl
@@ -30,6 +31,32 @@ export const saveMap = asyncHandler(async (req: Request, res: Response) => {
   });
 
   res.status(201).json(new ApiResponse(201, map, 'Map saved successfully'));
+});
+
+export const getClientSharedMaps = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) throw new ApiError(401, 'Not authorized');
+
+  // Find all maps linked to bookings where the current user is the client
+  const maps = await prisma.savedMap.findMany({
+    where: {
+      booking: {
+        client: {
+          accountId: req.user.id
+        }
+      }
+    },
+    include: {
+      booking: {
+        select: {
+          title: true,
+          bookingDate: true
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  res.status(200).json(new ApiResponse(200, maps, 'Shared maps fetched successfully'));
 });
 
 export const deleteMap = asyncHandler(async (req: Request, res: Response) => {

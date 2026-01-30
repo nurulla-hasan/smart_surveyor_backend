@@ -42,8 +42,9 @@ export const toggleBlockedDate = asyncHandler(async (req: Request, res: Response
 
   const { date, reason } = req.body;
   
-  const normalizedDate = new Date(date);
-  normalizedDate.setHours(0, 0, 0, 0);
+  // Normalize date to UTC midnight using robust YYYY-MM-DD parsing
+  const dateStr = typeof date === 'string' ? date.split('T')[0] : date.toISOString().split('T')[0];
+  const normalizedDate = new Date(`${dateStr}T00:00:00.000Z`);
 
   const existing = await prisma.blockedDate.findFirst({
     where: {
@@ -57,6 +58,19 @@ export const toggleBlockedDate = asyncHandler(async (req: Request, res: Response
       where: { id: existing.id }
     });
     return res.status(200).json(new ApiResponse(200, { action: 'unblocked', date: normalizedDate }, 'Date unblocked successfully'));
+  }
+
+  // Check if there are any active bookings on this date before blocking
+  const bookingOnDate = await prisma.booking.findFirst({
+    where: {
+      userId: req.user.id,
+      bookingDate: normalizedDate,
+      status: { not: 'cancelled' }
+    }
+  });
+
+  if (bookingOnDate) {
+    throw new ApiError(400, 'Cannot block this date because it already has an active booking.');
   }
 
   const blockedDate = await prisma.blockedDate.create({

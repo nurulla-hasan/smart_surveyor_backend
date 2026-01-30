@@ -16,7 +16,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"surveyor\",\n    \"phone\": \"+123456789\",\n    \"companyName\": \"Survey Corp\",\n    \"licenseNo\": \"LIC-123\",\n    \"address\": \"123 Survey St\"\n}",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"golaphasan5229@gmail.com\",\n    \"password\": \"111111\",\n    \"role\": \"surveyor\",\n    \"phone\": \"+123456789\",\n    \"companyName\": \"Survey Corp\",\n    \"licenseNo\": \"LIC-123\",\n    \"address\": \"123 Survey St\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -61,7 +61,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\"\n}",
+							"raw": "{\n    \"email\": \"golaphasan5229@gmail.com\",\n    \"password\": \"111111\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -122,7 +122,7 @@
 								"logout"
 							]
 						},
-						"description": "Logout user and clear cookies."
+						"description": "Logout user. Frontend should clear local tokens."
 					},
 					"response": []
 				},
@@ -234,6 +234,80 @@
 						"description": "Update user profile information."
 					},
 					"response": []
+				},
+				{
+					"name": "Get Surveyors",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/users/surveyors?location=Dinajpur&sortBy=rating&minExperience=2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"surveyors"
+							],
+							"query": [
+								{
+									"key": "location",
+									"value": "Dinajpur",
+									"description": "Filter by district or area"
+								},
+								{
+									"key": "sortBy",
+									"value": "rating",
+									"description": "Sort by rating or experience"
+								},
+								{
+									"key": "minExperience",
+									"value": "2",
+									"description": "Minimum years of experience"
+								}
+							]
+						},
+						"description": "Get a list of all available surveyors with marketplace filtering. Useful for client portal."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Surveyor Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/users/surveyors/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"surveyors",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "REPLACE_WITH_SURVEYOR_ID"
+								}
+							]
+						},
+						"description": "Get full profile of a surveyor including experience, rating, and job stats."
+					},
+					"response": []
 				}
 			]
 		},
@@ -252,7 +326,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/bookings?filter=all&page=1&pageSize=10",
+							"raw": "{{base_url}}/bookings?filter=all&date=&search=&page=1&pageSize=10",
 							"host": [
 								"{{base_url}}"
 							],
@@ -269,6 +343,11 @@
 									"key": "date",
 									"value": "",
 									"description": "Filter by specific date (YYYY-MM-DD)"
+								},
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search by booking title or client name"
 								},
 								{
 									"key": "page",
@@ -299,7 +378,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"clientName\": \"Jane Smith\",\n    \"clientPhone\": \"+1234567890\",\n    \"title\": \"Survey for Plot A\",\n    \"description\": \"Detailed survey requirement\",\n    \"bookingDate\": \"2026-02-15T10:00:00Z\",\n    \"propertyAddress\": \"123 Main St, City\",\n    \"amountReceived\": 500,\n    \"amountDue\": 1000,\n    \"paymentNote\": \"Partial payment received\"\n}",
+							"raw": "{\n    \"clientName\": \"Jane Smith\",\n    \"clientPhone\": \"+1234567890\",\n    \"title\": \"Survey for Plot A\",\n    \"description\": \"Detailed survey requirement\",\n    \"bookingDate\": \"2026-02-15T10:00:00Z\",\n    \"propertyAddress\": \"123 Main St, City\",\n    \"amountReceived\": 500,\n    \"amountDue\": 1000,\n    \"paymentNote\": \"Partial payment received\",\n    \"surveyorId\": \"REPLACE_WITH_SURVEYOR_ID\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -391,6 +470,43 @@
 					"response": []
 				},
 				{
+					"name": "Get Calendar Data",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/bookings/calendar?month=2&year=2026",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"bookings",
+								"calendar"
+							],
+							"query": [
+								{
+									"key": "month",
+									"value": "2",
+									"description": "Filter by month (1-12)"
+								},
+								{
+									"key": "year",
+									"value": "2026",
+									"description": "Filter by year"
+								}
+							]
+						},
+						"description": "Get both blocked and booked dates for the calendar view. Red dots = blockedDates, Orange dots = bookedDates."
+					},
+					"response": []
+				},
+				{
 					"name": "Delete Booking",
 					"request": {
 						"method": "DELETE",
@@ -449,7 +565,7 @@
 								{
 									"key": "search",
 									"value": "",
-									"description": "Search by name or email"
+									"description": "Search by name, email or phone"
 								},
 								{
 									"key": "page",
@@ -528,6 +644,46 @@
 							]
 						},
 						"description": "Get profile and booking history for a specific client."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Client",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Jane Updated\",\n    \"phone\": \"+1122334455\",\n    \"address\": \"789 Pine St, New City\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/clients/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"clients",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "REPLACE_WITH_CLIENT_ID"
+								}
+							]
+						},
+						"description": "Update client basic information like name, phone, and address."
 					},
 					"response": []
 				}
@@ -647,7 +803,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"title\": \"Area Calculation Plot X\",\n    \"type\": \"area\",\n    \"data\": { \"points\": [{\"lat\": 23.8, \"lng\": 90.4}], \"result\": 500 }\n}",
+							"raw": "{\n    \"type\": \"area\",\n    \"inputData\": {\n        \"sides\": [10, 20, 15, 25]\n    },\n    \"resultData\": {\n        \"areaSqFt\": 500,\n        \"areaKatha\": 0.69\n    },\n    \"bookingId\": \"REPLACE_WITH_BOOKING_ID\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -709,7 +865,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Plot A Boundary\",\n    \"data\": {\n        \"type\": \"FeatureCollection\",\n        \"features\": []\n    },\n    \"fileUrl\": \"https://example.com/map-data.kml\"\n}",
+							"raw": "{\n    \"name\": \"Plot A Boundary\",\n    \"data\": {\n        \"type\": \"FeatureCollection\",\n        \"features\": []\n    },\n    \"fileUrl\": \"https://example.com/map-data.kml\",\n    \"bookingId\": \"REPLACE_WITH_BOOKING_ID\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -725,7 +881,32 @@
 								"maps"
 							]
 						},
-						"description": "Save a map state with markers and center points."
+						"description": "Save a map state with GeoJSON data. Can be linked to a specific booking for sharing with clients."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Shared Maps (Client)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/maps/shared",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"maps",
+								"shared"
+							]
+						},
+						"description": "For clients to see GeoJSON maps shared by surveyors for their bookings."
 					},
 					"response": []
 				}
@@ -863,6 +1044,123 @@
 							]
 						},
 						"description": "Get booking statistics grouped by month for charts. Can be filtered by year."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Get Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/notifications",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications"
+							]
+						},
+						"description": "Get all notifications for the logged-in user."
+					},
+					"response": []
+				},
+				{
+					"name": "Mark All as Read",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/notifications/read-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications",
+								"read-all"
+							]
+						},
+						"description": "Mark all unread notifications as read."
+					},
+					"response": []
+				},
+				{
+					"name": "Mark as Read",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/notifications/:id/read",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications",
+								":id",
+								"read"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "NOTIFICATION_ID"
+								}
+							]
+						},
+						"description": "Mark a specific notification as read."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Notification",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/notifications/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "NOTIFICATION_ID"
+								}
+							]
+						},
+						"description": "Delete a specific notification."
 					},
 					"response": []
 				}

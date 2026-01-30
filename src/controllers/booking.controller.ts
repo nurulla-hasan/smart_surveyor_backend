@@ -10,6 +10,7 @@ export const getBookings = asyncHandler(async (req: Request, res: Response) => {
 
   const filter = (req.query.filter as string) || 'all';
   const dateStr = req.query.date as string | undefined;
+  const search = req.query.search as string | undefined;
   const page = parseInt(req.query.page as string) || 1;
   const pageSize = parseInt(req.query.pageSize as string) || 10;
   const userId = req.user.id;
@@ -18,6 +19,14 @@ export const getBookings = asyncHandler(async (req: Request, res: Response) => {
   today.setHours(0, 0, 0, 0);
 
   const where: any = { userId };
+
+  // Search logic
+  if (search) {
+    where.OR = [
+      { title: { contains: search, mode: 'insensitive' } },
+      { client: { name: { contains: search, mode: 'insensitive' } } }
+    ];
+  }
 
   // Date filter logic
   if (dateStr) {
@@ -85,15 +94,104 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
 
   const { 
     title, description, bookingDate, status, propertyAddress, 
-    clientName, clientPhone, amountReceived, amountDue, paymentNote 
+    clientName, clientPhone, amountReceived, amountDue, paymentNote,
+    surveyorId // Added for client portal bookings
   } = req.body;
 
-  const normalizedDate = new Date(bookingDate);
-  normalizedDate.setHours(0, 0, 0, 0);
+  const role = req.user.role;
+  let targetUserId: string;
+  let targetClientId: string;
+  let finalStatus: BookingStatus;
+
+  if (role === 'client') {
+    // If client is booking, they should choose a surveyorId, otherwise fallback to the first surveyor
+    let surveyor;
+    if (surveyorId) {
+      surveyor = await prisma.user.findFirst({
+        where: { id: surveyorId, role: 'surveyor' }
+      });
+    } else {
+      surveyor = await prisma.user.findFirst({
+        where: { role: 'surveyor' }
+      });
+    }
+
+    if (!surveyor) {
+      throw new ApiError(404, 'No surveyor found to accept bookings');
+    }
+
+    targetUserId = surveyor.id;
+    finalStatus = 'pending';
+
+    // Find the client record for this user account and surveyor
+    const clientRecord = await prisma.client.findFirst({
+      where: { accountId: req.user.id, userId: targetUserId }
+    });
+
+    if (!clientRecord) {
+      // If no client record exists, create one automatically
+      const newClient = await prisma.client.create({
+        data: {
+          userId: targetUserId,
+          accountId: req.user.id,
+          name: req.user.name,
+          email: req.user.email,
+          phone: req.user.phone || 'N/A'
+        }
+      });
+      targetClientId = newClient.id;
+    } else {
+      targetClientId = clientRecord.id;
+    }
+  } else if (role === 'admin') {
+    // Admin can create booking for themselves or any surveyor
+    targetUserId = surveyorId || req.user.id;
+    finalStatus = (status as BookingStatus) || 'scheduled';
+
+    let client = await prisma.client.findFirst({
+      where: { userId: targetUserId, name: clientName }
+    });
+    
+    if (!client) {
+      client = await prisma.client.create({
+        data: {
+          userId: targetUserId,
+          name: clientName,
+          email: 'temp@example.com',
+          phone: clientPhone || 'N/A'
+        }
+      });
+    }
+    targetClientId = client.id;
+  } else {
+    // Surveyor creating booking for themselves
+    targetUserId = req.user.id;
+    finalStatus = (status as BookingStatus) || 'scheduled';
+
+    let client = await prisma.client.findFirst({
+      where: { userId: targetUserId, name: clientName }
+    });
+    
+    if (!client) {
+      client = await prisma.client.create({
+        data: {
+          userId: targetUserId,
+          name: clientName,
+          email: 'temp@example.com',
+          phone: clientPhone || 'N/A'
+        }
+      });
+    }
+    targetClientId = client.id;
+  }
+
+  // Normalize date to UTC midnight using robust YYYY-MM-DD parsing
+  const dateStr = typeof bookingDate === 'string' ? bookingDate.split('T')[0] : bookingDate.toISOString().split('T')[0];
+  const normalizedDate = new Date(`${dateStr}T00:00:00.000Z`);
 
   const isBlocked = await prisma.blockedDate.findFirst({
     where: {
-      userId: req.user.id,
+      userId: targetUserId,
       date: normalizedDate
     }
   });
@@ -102,35 +200,30 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
     throw new ApiError(400, 'This date is blocked. Please select another date.');
   }
 
-  let client = await prisma.client.findFirst({
-    where: { userId: req.user.id, name: clientName }
-  });
-  
-  if (!client) {
-    client = await prisma.client.create({
-      data: {
-        userId: req.user.id,
-        name: clientName,
-        email: 'temp@example.com',
-        phone: clientPhone || 'N/A'
-      }
-    });
-  }
-
   const booking = await prisma.booking.create({
     data: {
-      userId: req.user.id,
-      clientId: client.id,
+      userId: targetUserId,
+      clientId: targetClientId,
       title,
       description,
       bookingDate: normalizedDate,
-      status: (status as BookingStatus) || 'scheduled',
+      status: finalStatus,
       propertyAddress,
       amountReceived: parseFloat(amountReceived) || 0,
       amountDue: parseFloat(amountDue) || 0,
       paymentNote
     },
     include: { client: true }
+  });
+
+  // Create notification for the surveyor
+  await prisma.notification.create({
+    data: {
+      userId: targetUserId,
+      type: 'NEW_BOOKING',
+      title: 'নতুন বুকিং',
+      message: `${req.user.name} একটি নতুন সার্ভে বুক করেছেন।`
+    }
   });
 
   res.status(201).json(new ApiResponse(201, booking, 'Booking created successfully'));
@@ -150,8 +243,8 @@ export const updateBooking = asyncHandler(async (req: Request, res: Response) =>
   const data = { ...req.body };
 
   if (data.bookingDate) {
-    const newDate = new Date(data.bookingDate);
-    newDate.setHours(0, 0, 0, 0);
+    const dateStr = typeof data.bookingDate === 'string' ? data.bookingDate.split('T')[0] : data.bookingDate.toISOString().split('T')[0];
+    const newDate = new Date(`${dateStr}T00:00:00.000Z`);
     
     if (newDate.getTime() !== new Date(booking.bookingDate).getTime()) {
         const isBlocked = await prisma.blockedDate.findFirst({
@@ -175,8 +268,34 @@ export const updateBooking = asyncHandler(async (req: Request, res: Response) =>
   const updatedBooking = await prisma.booking.update({
     where: { id: req.params.id as string },
     data,
-    include: { client: true }
+    include: { client: true, user: { select: { name: true } } }
   });
+
+  // Create notification if status is updated
+  if (data.status && data.status !== booking.status) {
+    let title = 'বুকিং আপডেট';
+    let message = `আপনার বুকিং স্ট্যাটাস পরিবর্তন করে "${data.status}" করা হয়েছে।`;
+
+    if (data.status === 'scheduled') {
+      title = 'বুকিং অনুমোদিত';
+      message = `আপনার বুকিংটি অনুমোদিত হয়েছে এবং ${new Date(updatedBooking.bookingDate).toLocaleDateString()} তারিখে নির্ধারিত হয়েছে।`;
+    } else if (data.status === 'cancelled') {
+      title = 'বুকিং বাতিল';
+      message = `আপনার বুকিংটি বাতিল করা হয়েছে।`;
+    }
+
+    // Notify the client
+    if (updatedBooking.client.accountId) {
+      await prisma.notification.create({
+        data: {
+          userId: updatedBooking.client.accountId,
+          type: 'STATUS_UPDATE',
+          title,
+          message
+        }
+      });
+    }
+  }
 
   res.status(200).json(new ApiResponse(200, updatedBooking, 'Booking updated successfully'));
 });
@@ -218,4 +337,47 @@ export const getUpcomingBookings = asyncHandler(async (req: Request, res: Respon
   });
 
   res.status(200).json(new ApiResponse(200, bookings, 'Upcoming bookings fetched successfully'));
+});
+
+export const getCalendarData = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) throw new ApiError(401, 'Not authorized');
+
+  const month = req.query.month ? parseInt(req.query.month as string) : new Date().getUTCMonth() + 1;
+  const year = req.query.year ? parseInt(req.query.year as string) : new Date().getUTCFullYear();
+  const userId = req.user.id;
+
+  const startDate = new Date(Date.UTC(year, month - 1, 1));
+  const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+
+  const [blockedDates, bookings] = await Promise.all([
+    prisma.blockedDate.findMany({
+      where: {
+        userId,
+        date: { gte: startDate, lte: endDate }
+      },
+      select: { date: true, reason: true }
+    }),
+    prisma.booking.findMany({
+      where: {
+        userId,
+        bookingDate: { gte: startDate, lte: endDate },
+        status: { not: 'cancelled' }
+      },
+      select: { bookingDate: true, title: true, status: true }
+    })
+  ]);
+
+  const calendarData = {
+    blockedDates: blockedDates.map(d => ({
+      date: d.date.toISOString().split('T')[0],
+      reason: d.reason
+    })),
+    bookedDates: bookings.map(b => ({
+      date: b.bookingDate.toISOString().split('T')[0],
+      title: b.title,
+      status: b.status
+    }))
+  };
+
+  res.status(200).json(new ApiResponse(200, calendarData, 'Calendar data fetched successfully'));
 });

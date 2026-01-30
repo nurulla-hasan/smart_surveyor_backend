@@ -8,6 +8,7 @@ import calculationRoutes from './calculation.routes.js';
 import mapRoutes from './map.routes.js';
 import blockedDateRoutes from './blockedDate.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
+import notificationRoutes from './notification.routes.js';
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use('/calculations', calculationRoutes);
 router.use('/maps', mapRoutes);
 router.use('/blocked-dates', blockedDateRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/notifications', notificationRoutes);
 
 export default router;

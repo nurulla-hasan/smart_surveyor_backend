@@ -26,6 +26,7 @@
     "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.5",
+    "morgan": "^1.10.1",
     "winston": "^3.19.0",
     "zod": "^4.3.6"
   },
@@ -36,6 +37,7 @@
     "@types/express": "^5.0.6",
     "@types/hpp": "^0.2.7",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
     "@types/node": "^25.1.0",
     "nodemon": "^3.1.11",
     "prisma": "^6.19.2",

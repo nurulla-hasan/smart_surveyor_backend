@@ -7,7 +7,7 @@ import ApiError from '../utils/ApiError.js';
 export const getClients = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
-  const searchQuery = req.query.query as string | undefined;
+  const searchQuery = req.query.search as string | undefined;
   const page = parseInt(req.query.page as string) || 1;
   const pageSize = parseInt(req.query.pageSize as string) || 10;
   const userId = req.user.id;
@@ -98,9 +98,12 @@ export const updateClient = asyncHandler(async (req: Request, res: Response) => 
     throw new ApiError(404, 'Client not found');
   }
 
+  // Prevent updating restricted fields
+  const { id, userId, createdAt, updatedAt, ...updateData } = req.body;
+
   const updatedClient = await prisma.client.update({
     where: { id: req.params.id as string },
-    data: req.body
+    data: updateData
   });
 
   res.status(200).json(new ApiResponse(200, updatedClient, 'Client updated successfully'));

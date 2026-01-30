@@ -2,13 +2,16 @@ import express from 'express';
 import {
   getMaps,
   saveMap,
-  deleteMap
+  deleteMap,
+  getClientSharedMaps
 } from '../controllers/map.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
 router.use(protect);
+
+router.get('/shared', getClientSharedMaps);
 
 router
   .route('/')

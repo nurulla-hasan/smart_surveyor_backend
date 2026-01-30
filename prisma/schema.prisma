@@ -17,6 +17,12 @@ model User {
   companyName          String?
   licenseNo            String?
   address              String?
+  experience           Int?          @default(0)
+  rating               Float?        @default(0)
+  totalReviews         Int?          @default(0)
+  location             String?
+  bio                  String?
+  profileImage         String?
   resetPasswordToken   String?
   resetPasswordExpire  DateTime?
   createdAt            DateTime      @default(now())
@@ -28,6 +34,7 @@ model User {
   calculations         Calculation[]
   savedMaps            SavedMap[]
   blockedDates         BlockedDate[]
+  notifications        Notification[]
 
   @@map("users")
 }
@@ -36,6 +43,20 @@ enum Role {
   surveyor
   client
   admin
+}
+
+model Notification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      String   // NEW_BOOKING, STATUS_UPDATE, MISSED_APPOINTMENT, etc.
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notifications")
 }
 
 model Client {
@@ -66,7 +87,7 @@ model Booking {
   title           String
   description     String?
   bookingDate     DateTime
-  status          BookingStatus @default(scheduled)
+  status          BookingStatus @default(pending)
   propertyAddress String?
   lat             Float?
   lng             Float?
@@ -77,6 +98,7 @@ model Booking {
   updatedAt       DateTime      @updatedAt
   reports         Report[]
   calculations    Calculation[]
+  savedMaps       SavedMap[]
 
   @@map("bookings")
 }
@@ -117,11 +139,12 @@ model Calculation {
   user       User     @relation(fields: [userId], references: [id])
   bookingId  String?  @db.ObjectId
   booking    Booking? @relation(fields: [bookingId], references: [id])
+  title      String?
   type       String
   inputData  Json
   resultData Json
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  updatedAt  DateTime? @updatedAt
 
   @@map("calculations")
 }
@@ -130,6 +153,8 @@ model SavedMap {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   userId    String   @db.ObjectId
   user      User     @relation(fields: [userId], references: [id])
+  bookingId String?  @db.ObjectId
+  booking   Booking? @relation(fields: [bookingId], references: [id])
   name      String
   data      Json
   fileUrl   String?
