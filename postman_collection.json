@@ -170,6 +170,108 @@
 						"description": "Get a new access token using a valid refresh token."
 					},
 					"response": []
+				},
+				{
+					"name": "Get Report",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reports/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reports",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "REPORT_ID"
+								}
+							]
+						},
+						"description": "Get details of a specific report."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Report",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Updated Report Title\",\n    \"content\": \"Updated content for the survey report.\",\n    \"areaSqFt\": 1200,\n    \"notes\": \"Updated notes.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/reports/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reports",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "REPORT_ID"
+								}
+							]
+						},
+						"description": "Update an existing report."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Report",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reports/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reports",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "REPORT_ID"
+								}
+							]
+						},
+						"description": "Delete a specific report."
+					},
+					"response": []
 				}
 			]
 		},
@@ -213,13 +315,30 @@
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"John Updated\",\n    \"phone\": \"+987654321\",\n    \"address\": \"456 New St\",\n    \"companyName\": \"New Survey Corp\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "John Updated",
+									"type": "text"
+								},
+								{
+									"key": "bio",
+									"value": "Expert land surveyor with 10 years of experience.",
+									"type": "text"
+								},
+								{
+									"key": "location",
+									"value": "Dinajpur",
+									"type": "text"
+								},
+								{
+									"key": "profileImage",
+									"type": "file",
+									"src": [],
+									"description": "Upload new profile picture"
 								}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{base_url}}/users/profile",
@@ -231,7 +350,7 @@
 								"profile"
 							]
 						},
-						"description": "Update user profile information."
+						"description": "Update user profile information and profile picture (Cloudinary)."
 					},
 					"response": []
 				},
@@ -740,13 +859,45 @@
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"clientId\": \"REPLACE_WITH_CLIENT_ID\",\n    \"bookingId\": \"REPLACE_WITH_BOOKING_ID\",\n    \"title\": \"Survey Report - Torimpur - 88\",\n    \"content\": \"Full survey details and findings...\",\n    \"mouzaName\": \"Torimpur\",\n    \"plotNo\": \"88\",\n    \"areaSqFt\": 43560,\n    \"areaKatha\": 60,\n    \"areaDecimal\": 100,\n    \"notes\": \"The land is flat and suitable for construction.\",\n    \"fileUrl\": \"https://example.com/report.pdf\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Survey Report - Plot 102",
+									"type": "text"
+								},
+								{
+									"key": "content",
+									"value": "Survey completed for plot 102...",
+									"type": "text"
+								},
+								{
+									"key": "clientId",
+									"value": "REPLACE_WITH_CLIENT_ID",
+									"type": "text"
+								},
+								{
+									"key": "bookingId",
+									"value": "REPLACE_WITH_BOOKING_ID",
+									"type": "text"
+								},
+								{
+									"key": "mouzaName",
+									"value": "Jadavpur",
+									"type": "text"
+								},
+								{
+									"key": "plotNo",
+									"value": "102",
+									"type": "text"
+								},
+								{
+									"key": "reportFile",
+									"type": "file",
+									"src": [],
+									"description": "Upload survey map or PDF"
 								}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{base_url}}/reports",
@@ -757,7 +908,7 @@
 								"reports"
 							]
 						},
-						"description": "Create a new survey report linked to a booking."
+						"description": "Create a new survey report with optional file upload (Cloudinary)."
 					},
 					"response": []
 				}
@@ -875,7 +1026,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Plot A Boundary\",\n    \"data\": {\n        \"type\": \"FeatureCollection\",\n        \"features\": []\n    },\n    \"fileUrl\": \"https://example.com/map-data.kml\",\n    \"bookingId\": \"REPLACE_WITH_BOOKING_ID\"\n}",
+							"raw": "{\n    \"name\": \"Plot A Boundary\",\n    \"data\": {\n        \"type\": \"FeatureCollection\",\n        \"features\": []\n    },\n    \"area\": 5.4,\n    \"perimeter\": 1200,\n    \"fileUrl\": \"https://example.com/map-data.kml\",\n    \"bookingId\": \"REPLACE_WITH_BOOKING_ID\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"

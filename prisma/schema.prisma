@@ -128,7 +128,7 @@ model Report {
   notes           String?
   fileUrl         String?
   createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  updatedAt       DateTime? @updatedAt
 
   @@map("reports")
 }
@@ -157,6 +157,8 @@ model SavedMap {
   booking   Booking? @relation(fields: [bookingId], references: [id])
   name      String
   data      Json
+  area      Float?
+  perimeter Float?
   fileUrl   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

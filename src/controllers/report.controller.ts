@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import ApiError from '../utils/ApiError.js';
+import { uploadOnCloudinary } from '../utils/cloudinary.js';
 
 export const getReports = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
@@ -57,7 +58,7 @@ export const createReport = asyncHandler(async (req: Request, res: Response) => 
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const { 
-    title, content, clientId, bookingId, fileUrl,
+    title, content, clientId, bookingId,
     mouzaName, plotNo, areaSqFt, areaKatha, areaDecimal, notes
   } = req.body;
 
@@ -66,6 +67,15 @@ export const createReport = asyncHandler(async (req: Request, res: Response) => 
   });
   if (!client) {
     throw new ApiError(400, 'Invalid Client ID');
+  }
+
+  // Handle file upload
+  let fileUrl = '';
+  if (req.file) {
+    const cloudinaryResponse = await uploadOnCloudinary(req.file.path);
+    if (cloudinaryResponse) {
+      fileUrl = cloudinaryResponse.secure_url;
+    }
   }
 
   const report = await prisma.report.create({
@@ -81,7 +91,7 @@ export const createReport = asyncHandler(async (req: Request, res: Response) => 
       areaKatha: areaKatha ? parseFloat(areaKatha) : null,
       areaDecimal: areaDecimal ? parseFloat(areaDecimal) : null,
       notes,
-      fileUrl
+      fileUrl: fileUrl || req.body.fileUrl // fallback to manual URL if provided
     },
     include: { client: true }
   });

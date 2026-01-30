@@ -35,7 +35,7 @@ export const getMaps = asyncHandler(async (req: Request, res: Response) => {
 export const saveMap = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
-  const { name, data, fileUrl, bookingId } = req.body;
+  const { name, data, fileUrl, bookingId, area, perimeter } = req.body;
 
   // Basic validation for MongoDB ObjectID if bookingId is provided
   if (bookingId && !/^[0-9a-fA-F]{24}$/.test(bookingId)) {
@@ -48,6 +48,8 @@ export const saveMap = asyncHandler(async (req: Request, res: Response) => {
       bookingId: bookingId || null,
       name,
       data,
+      area: area ? parseFloat(area) : null,
+      perimeter: perimeter ? parseFloat(perimeter) : null,
       fileUrl
     }
   });

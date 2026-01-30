@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import ApiError from '../utils/ApiError.js';
+import { uploadOnCloudinary } from '../utils/cloudinary.js';
 
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
@@ -18,14 +19,26 @@ export const getProfile = asyncHandler(async (req: Request, res: Response) => {
 export const updateProfile = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
-  const fields = ['name', 'phone', 'companyName', 'licenseNo', 'address'];
+  const fields = ['name', 'phone', 'companyName', 'licenseNo', 'address', 'experience', 'location', 'bio'];
   const data: any = {};
   
   fields.forEach(field => {
     if (req.body[field] !== undefined) {
-      data[field] = req.body[field];
+      if (field === 'experience') {
+        data[field] = parseInt(req.body[field]);
+      } else {
+        data[field] = req.body[field];
+      }
     }
   });
+
+  // Handle profile image upload
+  if (req.file) {
+    const cloudinaryResponse = await uploadOnCloudinary(req.file.path);
+    if (cloudinaryResponse) {
+      data.profileImage = cloudinaryResponse.secure_url;
+    }
+  }
 
   const user = await prisma.user.update({
     where: { id: req.user.id },

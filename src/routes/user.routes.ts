@@ -6,6 +6,7 @@ import {
   getSurveyorProfile
 } from '../controllers/user.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
+import { upload } from '../middlewares/multer.middleware.js';
 
 const router = express.Router();
 
@@ -17,6 +18,6 @@ router.get('/surveyors/:id', getSurveyorProfile);
 router
   .route('/profile')
   .get(getProfile)
-  .put(updateProfile);
+  .put(upload.single('profileImage'), updateProfile);
 
 export default router;

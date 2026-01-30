@@ -7,6 +7,7 @@ import {
   deleteReport
 } from '../controllers/report.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
+import { upload } from '../middlewares/multer.middleware.js';
 
 const router = express.Router();
 
@@ -15,7 +16,7 @@ router.use(protect);
 router
   .route('/')
   .get(getReports)
-  .post(createReport);
+  .post(upload.single('reportFile'), createReport);
 
 router
   .route('/:id')
