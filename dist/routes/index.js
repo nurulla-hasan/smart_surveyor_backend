@@ -1,0 +1,24 @@
+import express from 'express';
+import authRoutes from './auth.routes.js';
+import userRoutes from './user.routes.js';
+import clientRoutes from './client.routes.js';
+import bookingRoutes from './booking.routes.js';
+import reportRoutes from './report.routes.js';
+import calculationRoutes from './calculation.routes.js';
+import mapRoutes from './map.routes.js';
+import blockedDateRoutes from './blockedDate.routes.js';
+import dashboardRoutes from './dashboard.routes.js';
+import notificationRoutes from './notification.routes.js';
+const router = express.Router();
+router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
+router.use('/clients', clientRoutes);
+router.use('/bookings', bookingRoutes);
+router.use('/reports', reportRoutes);
+router.use('/calculations', calculationRoutes);
+router.use('/maps', mapRoutes);
+router.use('/blocked-dates', blockedDateRoutes);
+router.use('/dashboard', dashboardRoutes);
+router.use('/notifications', notificationRoutes);
+export default router;
+//# sourceMappingURL=index.js.map
