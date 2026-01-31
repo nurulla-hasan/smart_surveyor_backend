@@ -1,11 +1,17 @@
-import { prisma } from '../lib/prisma.js';
-import ApiResponse from '../utils/ApiResponse.js';
-import asyncHandler from '../utils/asyncHandler.js';
-import ApiError from '../utils/ApiError.js';
-import { uploadOnCloudinary } from '../utils/cloudinary.js';
-export const getReports = asyncHandler(async (req, res) => {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.deleteReport = exports.updateReport = exports.createReport = exports.getReport = exports.getReports = void 0;
+const prisma_js_1 = require("../lib/prisma.js");
+const ApiResponse_js_1 = __importDefault(require("../utils/ApiResponse.js"));
+const asyncHandler_js_1 = __importDefault(require("../utils/asyncHandler.js"));
+const ApiError_js_1 = __importDefault(require("../utils/ApiError.js"));
+const cloudinary_js_1 = require("../utils/cloudinary.js");
+exports.getReports = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
+        throw new ApiError_js_1.default(401, 'Not authorized');
     const page = parseInt(req.query.page) || 1;
     const pageSize = parseInt(req.query.pageSize) || 10;
     const search = req.query.search;
@@ -21,16 +27,16 @@ export const getReports = asyncHandler(async (req, res) => {
         ];
     }
     const [reports, totalCount] = await Promise.all([
-        prisma.report.findMany({
+        prisma_js_1.prisma.report.findMany({
             where,
             orderBy: { createdAt: 'desc' },
             include: { client: { select: { id: true, name: true, email: true } } },
             skip,
             take: pageSize
         }),
-        prisma.report.count({ where })
+        prisma_js_1.prisma.report.count({ where })
     ]);
-    res.status(200).json(new ApiResponse(200, {
+    res.status(200).json(new ApiResponse_js_1.default(200, {
         reports,
         meta: {
             totalItems: totalCount,
@@ -40,10 +46,10 @@ export const getReports = asyncHandler(async (req, res) => {
         }
     }, 'Reports fetched successfully'));
 });
-export const getReport = asyncHandler(async (req, res) => {
+exports.getReport = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
-    const report = await prisma.report.findFirst({
+        throw new ApiError_js_1.default(401, 'Not authorized');
+    const report = await prisma_js_1.prisma.report.findFirst({
         where: { id: req.params.id, userId: req.user.id },
         include: {
             client: { select: { id: true, name: true, email: true, phone: true } },
@@ -51,37 +57,37 @@ export const getReport = asyncHandler(async (req, res) => {
         }
     });
     if (!report) {
-        throw new ApiError(404, 'Report not found');
+        throw new ApiError_js_1.default(404, 'Report not found');
     }
-    res.status(200).json(new ApiResponse(200, report, 'Report details fetched successfully'));
+    res.status(200).json(new ApiResponse_js_1.default(200, report, 'Report details fetched successfully'));
 });
-export const createReport = asyncHandler(async (req, res) => {
+exports.createReport = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
+        throw new ApiError_js_1.default(401, 'Not authorized');
     // Parse JSON data from the "data" field in FormData
     let bodyData;
     try {
         bodyData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body;
     }
     catch (error) {
-        throw new ApiError(400, 'Invalid JSON format in data field');
+        throw new ApiError_js_1.default(400, 'Invalid JSON format in data field');
     }
     const { title, content, clientId, bookingId, mouzaName, plotNo, areaSqFt, areaKatha, areaDecimal, notes } = bodyData;
-    const client = await prisma.client.findFirst({
+    const client = await prisma_js_1.prisma.client.findFirst({
         where: { id: clientId, userId: req.user.id }
     });
     if (!client) {
-        throw new ApiError(400, 'Invalid Client ID');
+        throw new ApiError_js_1.default(400, 'Invalid Client ID');
     }
     // Handle file upload
     let fileUrl = '';
     if (req.file) {
-        const cloudinaryResponse = await uploadOnCloudinary(req.file.path);
+        const cloudinaryResponse = await (0, cloudinary_js_1.uploadOnCloudinary)(req.file.path);
         if (cloudinaryResponse) {
             fileUrl = cloudinaryResponse.secure_url;
         }
     }
-    const report = await prisma.report.create({
+    const report = await prisma_js_1.prisma.report.create({
         data: {
             userId: req.user.id,
             clientId: clientId,
@@ -98,16 +104,16 @@ export const createReport = asyncHandler(async (req, res) => {
         },
         include: { client: true }
     });
-    res.status(201).json(new ApiResponse(201, report, 'Report created successfully'));
+    res.status(201).json(new ApiResponse_js_1.default(201, report, 'Report created successfully'));
 });
-export const updateReport = asyncHandler(async (req, res) => {
+exports.updateReport = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
-    const existingReport = await prisma.report.findFirst({
+        throw new ApiError_js_1.default(401, 'Not authorized');
+    const existingReport = await prisma_js_1.prisma.report.findFirst({
         where: { id: req.params.id, userId: req.user.id }
     });
     if (!existingReport) {
-        throw new ApiError(404, 'Report not found');
+        throw new ApiError_js_1.default(404, 'Report not found');
     }
     // Parse JSON data from the "data" field in FormData (same as create)
     let bodyData;
@@ -115,13 +121,13 @@ export const updateReport = asyncHandler(async (req, res) => {
         bodyData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body;
     }
     catch (error) {
-        throw new ApiError(400, 'Invalid JSON format in data field');
+        throw new ApiError_js_1.default(400, 'Invalid JSON format in data field');
     }
     const { title, content, clientId, bookingId, mouzaName, plotNo, areaSqFt, areaKatha, areaDecimal, notes } = bodyData;
     // Handle file upload if a new file is provided
     let fileUrl = existingReport.fileUrl;
     if (req.file) {
-        const cloudinaryResponse = await uploadOnCloudinary(req.file.path);
+        const cloudinaryResponse = await (0, cloudinary_js_1.uploadOnCloudinary)(req.file.path);
         if (cloudinaryResponse) {
             fileUrl = cloudinaryResponse.secure_url;
         }
@@ -149,25 +155,25 @@ export const updateReport = asyncHandler(async (req, res) => {
         updateData.notes = notes || null;
     if (fileUrl !== undefined)
         updateData.fileUrl = fileUrl;
-    const updatedReport = await prisma.report.update({
+    const updatedReport = await prisma_js_1.prisma.report.update({
         where: { id: req.params.id },
         data: updateData,
         include: { client: true }
     });
-    res.status(200).json(new ApiResponse(200, updatedReport, 'Report updated successfully'));
+    res.status(200).json(new ApiResponse_js_1.default(200, updatedReport, 'Report updated successfully'));
 });
-export const deleteReport = asyncHandler(async (req, res) => {
+exports.deleteReport = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
-    const report = await prisma.report.findFirst({
+        throw new ApiError_js_1.default(401, 'Not authorized');
+    const report = await prisma_js_1.prisma.report.findFirst({
         where: { id: req.params.id, userId: req.user.id }
     });
     if (!report) {
-        throw new ApiError(404, 'Report not found');
+        throw new ApiError_js_1.default(404, 'Report not found');
     }
-    await prisma.report.delete({
+    await prisma_js_1.prisma.report.delete({
         where: { id: req.params.id }
     });
-    res.status(200).json(new ApiResponse(200, {}, 'Report deleted successfully'));
+    res.status(200).json(new ApiResponse_js_1.default(200, {}, 'Report deleted successfully'));
 });
 //# sourceMappingURL=report.controller.js.map

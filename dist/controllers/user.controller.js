@@ -1,20 +1,26 @@
-import { prisma } from '../lib/prisma.js';
-import ApiResponse from '../utils/ApiResponse.js';
-import asyncHandler from '../utils/asyncHandler.js';
-import ApiError from '../utils/ApiError.js';
-import { uploadOnCloudinary } from '../utils/cloudinary.js';
-export const getProfile = asyncHandler(async (req, res) => {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getSurveyorProfile = exports.getSurveyors = exports.updateProfile = exports.getProfile = void 0;
+const prisma_js_1 = require("../lib/prisma.js");
+const ApiResponse_js_1 = __importDefault(require("../utils/ApiResponse.js"));
+const asyncHandler_js_1 = __importDefault(require("../utils/asyncHandler.js"));
+const ApiError_js_1 = __importDefault(require("../utils/ApiError.js"));
+const cloudinary_js_1 = require("../utils/cloudinary.js");
+exports.getProfile = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
-    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+        throw new ApiError_js_1.default(401, 'Not authorized');
+    const user = await prisma_js_1.prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user)
-        throw new ApiError(404, 'User not found');
+        throw new ApiError_js_1.default(404, 'User not found');
     const { password, ...userWithoutPassword } = user;
-    res.status(200).json(new ApiResponse(200, userWithoutPassword, 'Profile fetched successfully'));
+    res.status(200).json(new ApiResponse_js_1.default(200, userWithoutPassword, 'Profile fetched successfully'));
 });
-export const updateProfile = asyncHandler(async (req, res) => {
+exports.updateProfile = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
+        throw new ApiError_js_1.default(401, 'Not authorized');
     const fields = ['name', 'phone', 'companyName', 'licenseNo', 'address', 'experience', 'location', 'bio'];
     const data = {};
     fields.forEach(field => {
@@ -29,19 +35,19 @@ export const updateProfile = asyncHandler(async (req, res) => {
     });
     // Handle profile image upload
     if (req.file) {
-        const cloudinaryResponse = await uploadOnCloudinary(req.file.path);
+        const cloudinaryResponse = await (0, cloudinary_js_1.uploadOnCloudinary)(req.file.path);
         if (cloudinaryResponse) {
             data.profileImage = cloudinaryResponse.secure_url;
         }
     }
-    const user = await prisma.user.update({
+    const user = await prisma_js_1.prisma.user.update({
         where: { id: req.user.id },
         data
     });
     const { password, ...userWithoutPassword } = user;
-    res.status(200).json(new ApiResponse(200, userWithoutPassword, 'Profile updated successfully'));
+    res.status(200).json(new ApiResponse_js_1.default(200, userWithoutPassword, 'Profile updated successfully'));
 });
-export const getSurveyors = asyncHandler(async (req, res) => {
+exports.getSurveyors = (0, asyncHandler_js_1.default)(async (req, res) => {
     const { location, sortBy, minExperience } = req.query;
     const where = { role: 'surveyor' };
     if (location) {
@@ -60,7 +66,7 @@ export const getSurveyors = asyncHandler(async (req, res) => {
     else {
         orderBy.createdAt = 'desc';
     }
-    const surveyors = await prisma.user.findMany({
+    const surveyors = await prisma_js_1.prisma.user.findMany({
         where,
         select: {
             id: true,
@@ -77,11 +83,11 @@ export const getSurveyors = asyncHandler(async (req, res) => {
         },
         orderBy
     });
-    res.status(200).json(new ApiResponse(200, surveyors, 'Surveyors fetched successfully'));
+    res.status(200).json(new ApiResponse_js_1.default(200, surveyors, 'Surveyors fetched successfully'));
 });
-export const getSurveyorProfile = asyncHandler(async (req, res) => {
+exports.getSurveyorProfile = (0, asyncHandler_js_1.default)(async (req, res) => {
     const { id } = req.params;
-    const surveyor = await prisma.user.findFirst({
+    const surveyor = await prisma_js_1.prisma.user.findFirst({
         where: { id: id, role: 'surveyor' },
         select: {
             id: true,
@@ -107,8 +113,8 @@ export const getSurveyorProfile = asyncHandler(async (req, res) => {
         }
     });
     if (!surveyor) {
-        throw new ApiError(404, 'Surveyor not found');
+        throw new ApiError_js_1.default(404, 'Surveyor not found');
     }
-    res.status(200).json(new ApiResponse(200, surveyor, 'Surveyor profile fetched successfully'));
+    res.status(200).json(new ApiResponse_js_1.default(200, surveyor, 'Surveyor profile fetched successfully'));
 });
 //# sourceMappingURL=user.controller.js.map

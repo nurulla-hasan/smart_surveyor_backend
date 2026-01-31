@@ -1,23 +1,29 @@
-import { prisma } from '../lib/prisma.js';
-import ApiResponse from '../utils/ApiResponse.js';
-import asyncHandler from '../utils/asyncHandler.js';
-import ApiError from '../utils/ApiError.js';
-export const getMaps = asyncHandler(async (req, res) => {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.deleteMap = exports.getClientSharedMaps = exports.saveMap = exports.getMaps = void 0;
+const prisma_js_1 = require("../lib/prisma.js");
+const ApiResponse_js_1 = __importDefault(require("../utils/ApiResponse.js"));
+const asyncHandler_js_1 = __importDefault(require("../utils/asyncHandler.js"));
+const ApiError_js_1 = __importDefault(require("../utils/ApiError.js"));
+exports.getMaps = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
+        throw new ApiError_js_1.default(401, 'Not authorized');
     const page = parseInt(req.query.page) || 1;
     const pageSize = parseInt(req.query.pageSize) || 10;
     const skip = (page - 1) * pageSize;
     const [maps, totalCount] = await Promise.all([
-        prisma.savedMap.findMany({
+        prisma_js_1.prisma.savedMap.findMany({
             where: { userId: req.user.id },
             orderBy: { createdAt: 'desc' },
             skip,
             take: pageSize
         }),
-        prisma.savedMap.count({ where: { userId: req.user.id } })
+        prisma_js_1.prisma.savedMap.count({ where: { userId: req.user.id } })
     ]);
-    res.status(200).json(new ApiResponse(200, {
+    res.status(200).json(new ApiResponse_js_1.default(200, {
         maps,
         meta: {
             totalItems: totalCount,
@@ -27,15 +33,15 @@ export const getMaps = asyncHandler(async (req, res) => {
         }
     }, 'Maps fetched successfully'));
 });
-export const saveMap = asyncHandler(async (req, res) => {
+exports.saveMap = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
+        throw new ApiError_js_1.default(401, 'Not authorized');
     const { name, data, fileUrl, bookingId, area, perimeter } = req.body;
     // Basic validation for MongoDB ObjectID if bookingId is provided
     if (bookingId && !/^[0-9a-fA-F]{24}$/.test(bookingId)) {
-        throw new ApiError(400, 'Invalid Booking ID format');
+        throw new ApiError_js_1.default(400, 'Invalid Booking ID format');
     }
-    const map = await prisma.savedMap.create({
+    const map = await prisma_js_1.prisma.savedMap.create({
         data: {
             userId: req.user.id,
             bookingId: bookingId || null,
@@ -46,11 +52,11 @@ export const saveMap = asyncHandler(async (req, res) => {
             fileUrl
         }
     });
-    res.status(201).json(new ApiResponse(201, map, 'Map saved successfully'));
+    res.status(201).json(new ApiResponse_js_1.default(201, map, 'Map saved successfully'));
 });
-export const getClientSharedMaps = asyncHandler(async (req, res) => {
+exports.getClientSharedMaps = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
+        throw new ApiError_js_1.default(401, 'Not authorized');
     const page = parseInt(req.query.page) || 1;
     const pageSize = parseInt(req.query.pageSize) || 10;
     const skip = (page - 1) * pageSize;
@@ -63,7 +69,7 @@ export const getClientSharedMaps = asyncHandler(async (req, res) => {
     };
     // Find all maps linked to bookings where the current user is the client
     const [maps, totalCount] = await Promise.all([
-        prisma.savedMap.findMany({
+        prisma_js_1.prisma.savedMap.findMany({
             where,
             include: {
                 booking: {
@@ -77,9 +83,9 @@ export const getClientSharedMaps = asyncHandler(async (req, res) => {
             skip,
             take: pageSize
         }),
-        prisma.savedMap.count({ where })
+        prisma_js_1.prisma.savedMap.count({ where })
     ]);
-    res.status(200).json(new ApiResponse(200, {
+    res.status(200).json(new ApiResponse_js_1.default(200, {
         maps,
         meta: {
             totalItems: totalCount,
@@ -89,18 +95,18 @@ export const getClientSharedMaps = asyncHandler(async (req, res) => {
         }
     }, 'Shared maps fetched successfully'));
 });
-export const deleteMap = asyncHandler(async (req, res) => {
+exports.deleteMap = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
-    const map = await prisma.savedMap.findFirst({
+        throw new ApiError_js_1.default(401, 'Not authorized');
+    const map = await prisma_js_1.prisma.savedMap.findFirst({
         where: { id: req.params.id, userId: req.user.id }
     });
     if (!map) {
-        throw new ApiError(404, 'Map not found');
+        throw new ApiError_js_1.default(404, 'Map not found');
     }
-    await prisma.savedMap.delete({
+    await prisma_js_1.prisma.savedMap.delete({
         where: { id: req.params.id }
     });
-    res.status(200).json(new ApiResponse(200, {}, 'Map deleted successfully'));
+    res.status(200).json(new ApiResponse_js_1.default(200, {}, 'Map deleted successfully'));
 });
 //# sourceMappingURL=map.controller.js.map

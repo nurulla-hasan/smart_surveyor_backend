@@ -1,1 +1,1 @@
-{"version":3,"file":"cloudinary.d.ts","sourceRoot":"","sources":["../../src/utils/cloudinary.ts"],"names":[],"mappings":"AAYA,QAAA,MAAM,kBAAkB,GAAU,eAAe,MAAM,2DAqBtD,CAAC;AAEF,OAAO,EAAE,kBAAkB,EAAE,CAAC"}
+{"version":3,"file":"cloudinary.d.ts","sourceRoot":"","sources":["../../src/utils/cloudinary.ts"],"names":[],"mappings":"AAYA,QAAA,MAAM,kBAAkB,GAAU,eAAe,MAAM,oDAqBtD,CAAC;AAEF,OAAO,EAAE,kBAAkB,EAAE,CAAC"}

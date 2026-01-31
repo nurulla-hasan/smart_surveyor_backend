@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Router } from 'express';
 import authRoutes from './auth.routes.js';
 import userRoutes from './user.routes.js';
 import clientRoutes from './client.routes.js';
@@ -10,7 +10,7 @@ import blockedDateRoutes from './blockedDate.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
 import notificationRoutes from './notification.routes.js';
 
-const router = express.Router();
+const router: Router = express.Router();
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);

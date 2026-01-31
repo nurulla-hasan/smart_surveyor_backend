@@ -1,1 +1,1 @@
-{"version":3,"file":"calculation.routes.d.ts","sourceRoot":"","sources":["../../src/routes/calculation.routes.ts"],"names":[],"mappings":"AAQA,QAAA,MAAM,MAAM,4CAAmB,CAAC;AAahC,eAAe,MAAM,CAAC"}
+{"version":3,"file":"calculation.routes.d.ts","sourceRoot":"","sources":["../../src/routes/calculation.routes.ts"],"names":[],"mappings":"AAAA,OAAgB,EAAE,KAAK,MAAM,EAAE,MAAM,SAAS,CAAC;AAQ/C,QAAA,MAAM,MAAM,EAAE,MAAyB,CAAC;AAaxC,eAAe,MAAM,CAAC"}

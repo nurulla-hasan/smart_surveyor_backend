@@ -1,11 +1,11 @@
-import express from 'express';
+import express, { type Router } from 'express';
 import {
   getStats,
   getMonthlyStats
 } from '../controllers/dashboard.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 
-const router = express.Router();
+const router: Router = express.Router();
 
 router.use(protect);
 

@@ -148,9 +148,9 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
         data: {
           userId: targetUserId,
           accountId: req.user.id,
-          name: req.user.name,
+          name: (req.user as any).name,
           email: req.user.email,
-          phone: req.user.phone || 'N/A'
+          phone: (req.user as any).phone || 'N/A'
         }
       });
       targetClientId = newClient.id;
@@ -230,7 +230,7 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
       userId: targetUserId,
       type: 'NEW_BOOKING',
       title: 'নতুন বুকিং',
-      message: `${req.user.name} একটি নতুন সার্ভে বুক করেছেন।`
+      message: `${(req.user as any).name} একটি নতুন সার্ভে বুক করেছেন।`
     }
   });
 

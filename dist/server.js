@@ -1,12 +1,17 @@
-import 'dotenv/config';
-import app from './app.js';
-import { prisma } from './lib/prisma.js';
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+require("dotenv/config");
+const app_js_1 = __importDefault(require("./app.js"));
+const prisma_js_1 = require("./lib/prisma.js");
 const PORT = process.env.PORT || 5000;
 async function startServer() {
     try {
-        await prisma.$connect();
+        await prisma_js_1.prisma.$connect();
         console.log('✅ MongoDB Connected via Prisma');
-        const server = app.listen(PORT, () => {
+        const server = app_js_1.default.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
         });
         // Handle unhandled rejections

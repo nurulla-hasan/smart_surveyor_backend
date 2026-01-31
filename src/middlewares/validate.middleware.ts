@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import ApiError from '../utils/ApiError.js';
 
-const validate = (schema: z.ZodObject<any>) => (req: Request, res: Response, next: NextFunction) => {
+const validate = (schema: z.ZodObject<any>) => (req: Request, _res: Response, next: NextFunction) => {
   try {
     schema.parse({
       body: req.body,

@@ -1,16 +1,15 @@
-import express from 'express';
-import type { Request, Response } from 'express';
+import express, { type Application, type Request, type Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import hpp from 'hpp';
 import morgan from 'morgan';
-import cookieParser from 'cookie-parser';
+
 
 import errorHandler from './middlewares/error.middleware.js';
 import routes from './routes/index.js';
 
-const app = express();
+const app: Application = express();
 
 // Security middleware
 app.use(helmet());
@@ -40,13 +39,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(hpp());
 
 // API routes placeholder
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (_req: Request, res: Response) => {
     res.json({ message: 'Welcome to Smart Surveyor API' });
 });
 app.use('/api/v1', routes);
 
 // 404 handler
-app.use((req: Request, res: Response) => {
+app.use((_req: Request, res: Response) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
 

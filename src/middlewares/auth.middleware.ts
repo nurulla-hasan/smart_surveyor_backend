@@ -10,7 +10,7 @@ interface DecodedToken {
 }
 
 // Protect routes
-export const protect = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const protect = asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
   let token: string | undefined;
   
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
@@ -40,7 +40,7 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
 });
 
 export const authorize = (...roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.user || !roles.includes(req.user.role)) {
       throw new ApiError(403, `User role ${req.user?.role} is not authorized to access this route`);
     }

@@ -1,6 +1,10 @@
-import { z } from 'zod';
-import ApiError from '../utils/ApiError.js';
-const validate = (schema) => (req, res, next) => {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const ApiError_js_1 = __importDefault(require("../utils/ApiError.js"));
+const validate = (schema) => (req, _res, next) => {
     try {
         schema.parse({
             body: req.body,
@@ -11,8 +15,8 @@ const validate = (schema) => (req, res, next) => {
     }
     catch (error) {
         const errorMessage = error.errors.map((err) => err.message).join(', ');
-        next(new ApiError(400, errorMessage));
+        next(new ApiError_js_1.default(400, errorMessage));
     }
 };
-export default validate;
+exports.default = validate;
 //# sourceMappingURL=validate.middleware.js.map

@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Router } from 'express';
 import {
   getCalculations,
   saveCalculation,
@@ -6,7 +6,7 @@ import {
 } from '../controllers/calculation.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 
-const router = express.Router();
+const router: Router = express.Router();
 
 router.use(protect);
 

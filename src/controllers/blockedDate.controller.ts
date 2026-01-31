@@ -81,5 +81,5 @@ export const toggleBlockedDate = asyncHandler(async (req: Request, res: Response
     }
   });
 
-  res.status(201).json(new ApiResponse(201, { action: 'blocked', date: blockedDate }, 'Date blocked successfully'));
+  return res.status(201).json(new ApiResponse(201, { action: 'blocked', date: blockedDate }, 'Date blocked successfully'));
 });

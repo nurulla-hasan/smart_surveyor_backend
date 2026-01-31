@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Router } from 'express';
 import {
   getProfile,
   updateProfile,
@@ -8,7 +8,7 @@ import {
 import { protect } from '../middlewares/auth.middleware.js';
 import { upload } from '../middlewares/multer.middleware.js';
 
-const router = express.Router();
+const router: Router = express.Router();
 
 router.use(protect);
 

@@ -1,11 +1,16 @@
-import { prisma } from '../lib/prisma.js';
-import ApiResponse from '../utils/ApiResponse.js';
-import asyncHandler from '../utils/asyncHandler.js';
-import ApiError from '../utils/ApiError.js';
-import { BookingStatus } from '@prisma/client';
-export const getBookings = asyncHandler(async (req, res) => {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getCalendarData = exports.getUpcomingBookings = exports.deleteBooking = exports.updateBooking = exports.createBooking = exports.getBooking = exports.getBookings = void 0;
+const prisma_js_1 = require("../lib/prisma.js");
+const ApiResponse_js_1 = __importDefault(require("../utils/ApiResponse.js"));
+const asyncHandler_js_1 = __importDefault(require("../utils/asyncHandler.js"));
+const ApiError_js_1 = __importDefault(require("../utils/ApiError.js"));
+exports.getBookings = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
+        throw new ApiError_js_1.default(401, 'Not authorized');
     const filter = req.query.filter || 'all';
     const dateStr = req.query.date;
     const search = req.query.search;
@@ -51,7 +56,7 @@ export const getBookings = asyncHandler(async (req, res) => {
     }
     const skip = (page - 1) * pageSize;
     const [bookings, totalCount] = await Promise.all([
-        prisma.booking.findMany({
+        prisma_js_1.prisma.booking.findMany({
             where,
             include: {
                 client: { select: { id: true, name: true, email: true, phone: true } },
@@ -62,9 +67,9 @@ export const getBookings = asyncHandler(async (req, res) => {
             skip,
             take: pageSize
         }),
-        prisma.booking.count({ where })
+        prisma_js_1.prisma.booking.count({ where })
     ]);
-    res.status(200).json(new ApiResponse(200, {
+    res.status(200).json(new ApiResponse_js_1.default(200, {
         bookings,
         meta: {
             totalItems: totalCount,
@@ -74,10 +79,10 @@ export const getBookings = asyncHandler(async (req, res) => {
         }
     }, 'Bookings fetched successfully'));
 });
-export const getBooking = asyncHandler(async (req, res) => {
+exports.getBooking = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
-    const booking = await prisma.booking.findFirst({
+        throw new ApiError_js_1.default(401, 'Not authorized');
+    const booking = await prisma_js_1.prisma.booking.findFirst({
         where: { id: req.params.id, userId: req.user.id },
         include: {
             client: { select: { id: true, name: true, email: true, phone: true } },
@@ -86,13 +91,13 @@ export const getBooking = asyncHandler(async (req, res) => {
         }
     });
     if (!booking) {
-        throw new ApiError(404, 'Booking not found');
+        throw new ApiError_js_1.default(404, 'Booking not found');
     }
-    res.status(200).json(new ApiResponse(200, booking, 'Booking details fetched successfully'));
+    res.status(200).json(new ApiResponse_js_1.default(200, booking, 'Booking details fetched successfully'));
 });
-export const createBooking = asyncHandler(async (req, res) => {
+exports.createBooking = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
+        throw new ApiError_js_1.default(401, 'Not authorized');
     const { title, description, bookingDate, status, propertyAddress, clientId, clientName, clientPhone, amountReceived, amountDue, paymentNote, surveyorId // Added for client portal bookings
      } = req.body;
     const role = req.user.role;
@@ -103,27 +108,27 @@ export const createBooking = asyncHandler(async (req, res) => {
         // If client is booking, they should choose a surveyorId, otherwise fallback to the first surveyor
         let surveyor;
         if (surveyorId) {
-            surveyor = await prisma.user.findFirst({
+            surveyor = await prisma_js_1.prisma.user.findFirst({
                 where: { id: surveyorId, role: 'surveyor' }
             });
         }
         else {
-            surveyor = await prisma.user.findFirst({
+            surveyor = await prisma_js_1.prisma.user.findFirst({
                 where: { role: 'surveyor' }
             });
         }
         if (!surveyor) {
-            throw new ApiError(404, 'No surveyor found to accept bookings');
+            throw new ApiError_js_1.default(404, 'No surveyor found to accept bookings');
         }
         targetUserId = surveyor.id;
         finalStatus = 'pending';
         // Find the client record for this user account and surveyor
-        const clientRecord = await prisma.client.findFirst({
+        const clientRecord = await prisma_js_1.prisma.client.findFirst({
             where: { accountId: req.user.id, userId: targetUserId }
         });
         if (!clientRecord) {
             // If no client record exists, create one automatically
-            const newClient = await prisma.client.create({
+            const newClient = await prisma_js_1.prisma.client.create({
                 data: {
                     userId: targetUserId,
                     accountId: req.user.id,
@@ -144,21 +149,21 @@ export const createBooking = asyncHandler(async (req, res) => {
         finalStatus = status || 'scheduled';
         if (clientId) {
             // If clientId is provided, verify it belongs to this surveyor
-            const existingClient = await prisma.client.findFirst({
+            const existingClient = await prisma_js_1.prisma.client.findFirst({
                 where: { id: clientId, userId: targetUserId }
             });
             if (!existingClient) {
-                throw new ApiError(404, 'Selected client not found for this surveyor');
+                throw new ApiError_js_1.default(404, 'Selected client not found for this surveyor');
             }
             targetClientId = existingClient.id;
         }
         else if (clientName) {
             // Fallback to finding/creating by name if clientId not provided
-            let client = await prisma.client.findFirst({
+            let client = await prisma_js_1.prisma.client.findFirst({
                 where: { userId: targetUserId, name: clientName }
             });
             if (!client) {
-                client = await prisma.client.create({
+                client = await prisma_js_1.prisma.client.create({
                     data: {
                         userId: targetUserId,
                         name: clientName,
@@ -170,22 +175,22 @@ export const createBooking = asyncHandler(async (req, res) => {
             targetClientId = client.id;
         }
         else {
-            throw new ApiError(400, 'Client ID or Client Name is required');
+            throw new ApiError_js_1.default(400, 'Client ID or Client Name is required');
         }
     }
     // Normalize date to UTC midnight using robust YYYY-MM-DD parsing
     const dateStr = typeof bookingDate === 'string' ? bookingDate.split('T')[0] : bookingDate.toISOString().split('T')[0];
     const normalizedDate = new Date(`${dateStr}T00:00:00.000Z`);
-    const isBlocked = await prisma.blockedDate.findFirst({
+    const isBlocked = await prisma_js_1.prisma.blockedDate.findFirst({
         where: {
             userId: targetUserId,
             date: normalizedDate
         }
     });
     if (isBlocked) {
-        throw new ApiError(400, 'This date is blocked. Please select another date.');
+        throw new ApiError_js_1.default(400, 'This date is blocked. Please select another date.');
     }
-    const booking = await prisma.booking.create({
+    const booking = await prisma_js_1.prisma.booking.create({
         data: {
             userId: targetUserId,
             clientId: targetClientId,
@@ -201,7 +206,7 @@ export const createBooking = asyncHandler(async (req, res) => {
         include: { client: true }
     });
     // Create notification for the surveyor
-    await prisma.notification.create({
+    await prisma_js_1.prisma.notification.create({
         data: {
             userId: targetUserId,
             type: 'NEW_BOOKING',
@@ -209,30 +214,30 @@ export const createBooking = asyncHandler(async (req, res) => {
             message: `${req.user.name} একটি নতুন সার্ভে বুক করেছেন।`
         }
     });
-    res.status(201).json(new ApiResponse(201, booking, 'Booking created successfully'));
+    res.status(201).json(new ApiResponse_js_1.default(201, booking, 'Booking created successfully'));
 });
-export const updateBooking = asyncHandler(async (req, res) => {
+exports.updateBooking = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
-    const booking = await prisma.booking.findFirst({
+        throw new ApiError_js_1.default(401, 'Not authorized');
+    const booking = await prisma_js_1.prisma.booking.findFirst({
         where: { id: req.params.id, userId: req.user.id }
     });
     if (!booking) {
-        throw new ApiError(404, 'Booking not found');
+        throw new ApiError_js_1.default(404, 'Booking not found');
     }
     const data = { ...req.body };
     if (data.bookingDate) {
         const dateStr = typeof data.bookingDate === 'string' ? data.bookingDate.split('T')[0] : data.bookingDate.toISOString().split('T')[0];
         const newDate = new Date(`${dateStr}T00:00:00.000Z`);
         if (newDate.getTime() !== new Date(booking.bookingDate).getTime()) {
-            const isBlocked = await prisma.blockedDate.findFirst({
+            const isBlocked = await prisma_js_1.prisma.blockedDate.findFirst({
                 where: {
                     userId: req.user.id,
                     date: newDate
                 }
             });
             if (isBlocked) {
-                throw new ApiError(400, 'This date is blocked. Please select another date.');
+                throw new ApiError_js_1.default(400, 'This date is blocked. Please select another date.');
             }
             data.bookingDate = newDate;
         }
@@ -243,7 +248,7 @@ export const updateBooking = asyncHandler(async (req, res) => {
         data.amountDue = parseFloat(data.amountDue);
     if (data.status)
         data.status = data.status;
-    const updatedBooking = await prisma.booking.update({
+    const updatedBooking = await prisma_js_1.prisma.booking.update({
         where: { id: req.params.id },
         data,
         include: { client: true, user: { select: { name: true } } }
@@ -262,7 +267,7 @@ export const updateBooking = asyncHandler(async (req, res) => {
         }
         // Notify the client
         if (updatedBooking.client.accountId) {
-            await prisma.notification.create({
+            await prisma_js_1.prisma.notification.create({
                 data: {
                     userId: updatedBooking.client.accountId,
                     type: 'STATUS_UPDATE',
@@ -272,29 +277,29 @@ export const updateBooking = asyncHandler(async (req, res) => {
             });
         }
     }
-    res.status(200).json(new ApiResponse(200, updatedBooking, 'Booking updated successfully'));
+    res.status(200).json(new ApiResponse_js_1.default(200, updatedBooking, 'Booking updated successfully'));
 });
-export const deleteBooking = asyncHandler(async (req, res) => {
+exports.deleteBooking = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
-    const booking = await prisma.booking.findFirst({
+        throw new ApiError_js_1.default(401, 'Not authorized');
+    const booking = await prisma_js_1.prisma.booking.findFirst({
         where: { id: req.params.id, userId: req.user.id }
     });
     if (!booking) {
-        throw new ApiError(404, 'Booking not found');
+        throw new ApiError_js_1.default(404, 'Booking not found');
     }
-    await prisma.booking.delete({
+    await prisma_js_1.prisma.booking.delete({
         where: { id: req.params.id }
     });
-    res.status(200).json(new ApiResponse(200, {}, 'Booking deleted successfully'));
+    res.status(200).json(new ApiResponse_js_1.default(200, {}, 'Booking deleted successfully'));
 });
-export const getUpcomingBookings = asyncHandler(async (req, res) => {
+exports.getUpcomingBookings = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
+        throw new ApiError_js_1.default(401, 'Not authorized');
     const limit = parseInt(req.query.limit) || 3;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const bookings = await prisma.booking.findMany({
+    const bookings = await prisma_js_1.prisma.booking.findMany({
         where: {
             userId: req.user.id,
             bookingDate: { gte: today },
@@ -304,25 +309,25 @@ export const getUpcomingBookings = asyncHandler(async (req, res) => {
         take: limit,
         include: { client: { select: { name: true } } }
     });
-    res.status(200).json(new ApiResponse(200, bookings, 'Upcoming bookings fetched successfully'));
+    res.status(200).json(new ApiResponse_js_1.default(200, bookings, 'Upcoming bookings fetched successfully'));
 });
-export const getCalendarData = asyncHandler(async (req, res) => {
+exports.getCalendarData = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
-        throw new ApiError(401, 'Not authorized');
+        throw new ApiError_js_1.default(401, 'Not authorized');
     const month = req.query.month ? parseInt(req.query.month) : new Date().getUTCMonth() + 1;
     const year = req.query.year ? parseInt(req.query.year) : new Date().getUTCFullYear();
     const userId = req.user.id;
     const startDate = new Date(Date.UTC(year, month - 1, 1));
     const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
     const [blockedDates, bookings] = await Promise.all([
-        prisma.blockedDate.findMany({
+        prisma_js_1.prisma.blockedDate.findMany({
             where: {
                 userId,
                 date: { gte: startDate, lte: endDate }
             },
             select: { date: true, reason: true }
         }),
-        prisma.booking.findMany({
+        prisma_js_1.prisma.booking.findMany({
             where: {
                 userId,
                 bookingDate: { gte: startDate, lte: endDate },
@@ -342,6 +347,6 @@ export const getCalendarData = asyncHandler(async (req, res) => {
             status: b.status
         }))
     };
-    res.status(200).json(new ApiResponse(200, calendarData, 'Calendar data fetched successfully'));
+    res.status(200).json(new ApiResponse_js_1.default(200, calendarData, 'Calendar data fetched successfully'));
 });
 //# sourceMappingURL=booking.controller.js.map

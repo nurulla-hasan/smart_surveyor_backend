@@ -1,14 +1,20 @@
-import { prisma } from '../lib/prisma.js';
-import { hashPassword, comparePassword, generateToken, generateRefreshToken, verifyRefreshToken } from '../utils/auth.js';
-import ApiError from '../utils/ApiError.js';
-export class AuthService {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AuthService = void 0;
+const prisma_js_1 = require("../lib/prisma.js");
+const auth_js_1 = require("../utils/auth.js");
+const ApiError_js_1 = __importDefault(require("../utils/ApiError.js"));
+class AuthService {
     static async register(data) {
-        const userExists = await prisma.user.findUnique({ where: { email: data.email } });
+        const userExists = await prisma_js_1.prisma.user.findUnique({ where: { email: data.email } });
         if (userExists) {
-            throw new ApiError(400, 'User already exists with this email');
+            throw new ApiError_js_1.default(400, 'User already exists with this email');
         }
-        const hashedPassword = await hashPassword(data.password);
-        const user = await prisma.user.create({
+        const hashedPassword = await (0, auth_js_1.hashPassword)(data.password);
+        const user = await prisma_js_1.prisma.user.create({
             data: {
                 ...data,
                 password: hashedPassword
@@ -26,27 +32,27 @@ export class AuthService {
                 updatedAt: true
             }
         });
-        const accessToken = generateToken(user);
-        const refreshToken = generateRefreshToken(user.id);
+        const accessToken = (0, auth_js_1.generateToken)(user);
+        const refreshToken = (0, auth_js_1.generateRefreshToken)(user.id);
         return { accessToken, refreshToken };
     }
     static async login(email, passwordText) {
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma_js_1.prisma.user.findUnique({ where: { email } });
         if (!user) {
-            throw new ApiError(401, 'Invalid credentials');
+            throw new ApiError_js_1.default(401, 'Invalid credentials');
         }
-        const isMatch = await comparePassword(passwordText, user.password);
+        const isMatch = await (0, auth_js_1.comparePassword)(passwordText, user.password);
         if (!isMatch) {
-            throw new ApiError(401, 'Invalid credentials');
+            throw new ApiError_js_1.default(401, 'Invalid credentials');
         }
-        const accessToken = generateToken(user);
-        const refreshToken = generateRefreshToken(user.id);
+        const accessToken = (0, auth_js_1.generateToken)(user);
+        const refreshToken = (0, auth_js_1.generateRefreshToken)(user.id);
         return { accessToken, refreshToken };
     }
     static async refreshToken(token) {
         try {
-            const decoded = verifyRefreshToken(token);
-            const user = await prisma.user.findUnique({
+            const decoded = (0, auth_js_1.verifyRefreshToken)(token);
+            const user = await prisma_js_1.prisma.user.findUnique({
                 where: { id: decoded.id },
                 select: {
                     id: true,
@@ -62,14 +68,15 @@ export class AuthService {
                 }
             });
             if (!user) {
-                throw new ApiError(401, 'User not found');
+                throw new ApiError_js_1.default(401, 'User not found');
             }
-            const accessToken = generateToken(user);
+            const accessToken = (0, auth_js_1.generateToken)(user);
             return { accessToken };
         }
         catch (error) {
-            throw new ApiError(401, 'Invalid refresh token');
+            throw new ApiError_js_1.default(401, 'Invalid refresh token');
         }
     }
 }
+exports.AuthService = AuthService;
 //# sourceMappingURL=auth.service.js.map

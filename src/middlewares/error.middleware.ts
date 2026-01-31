@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import ApiError from '../utils/ApiError.js';
 
-const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+const errorHandler = (err: any, _req: Request, res: Response, _next: NextFunction) => {
   let error = { ...err };
   error.message = err.message;
 

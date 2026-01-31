@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Router } from 'express';
 import {
   getMaps,
   saveMap,
@@ -7,7 +7,7 @@ import {
 } from '../controllers/map.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 
-const router = express.Router();
+const router: Router = express.Router();
 
 router.use(protect);
 
