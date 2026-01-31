@@ -10,19 +10,31 @@ export const getReports = asyncHandler(async (req: Request, res: Response) => {
 
   const page = parseInt(req.query.page as string) || 1;
   const pageSize = parseInt(req.query.pageSize as string) || 10;
+  const search = req.query.search as string | undefined;
   const userId = req.user.id;
 
   const skip = (page - 1) * pageSize;
 
+  const where: any = { userId };
+
+  if (search) {
+    where.OR = [
+      { title: { contains: search, mode: 'insensitive' } },
+      { mouzaName: { contains: search, mode: 'insensitive' } },
+      { plotNo: { contains: search, mode: 'insensitive' } },
+      { client: { name: { contains: search, mode: 'insensitive' } } }
+    ];
+  }
+
   const [reports, totalCount] = await Promise.all([
     prisma.report.findMany({
-      where: { userId },
+      where,
       orderBy: { createdAt: 'desc' },
       include: { client: { select: { id: true, name: true, email: true } } },
       skip,
       take: pageSize
     }),
-    prisma.report.count({ where: { userId } })
+    prisma.report.count({ where })
   ]);
 
   res.status(200).json(new ApiResponse(200, {
@@ -57,10 +69,18 @@ export const getReport = asyncHandler(async (req: Request, res: Response) => {
 export const createReport = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
+  // Parse JSON data from the "data" field in FormData
+  let bodyData;
+  try {
+    bodyData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body;
+  } catch (error) {
+    throw new ApiError(400, 'Invalid JSON format in data field');
+  }
+
   const { 
     title, content, clientId, bookingId,
     mouzaName, plotNo, areaSqFt, areaKatha, areaDecimal, notes
-  } = req.body;
+  } = bodyData;
 
   const client = await prisma.client.findFirst({
     where: { id: clientId, userId: req.user.id }
@@ -81,17 +101,17 @@ export const createReport = asyncHandler(async (req: Request, res: Response) => 
   const report = await prisma.report.create({
     data: {
       userId: req.user.id,
-      clientId,
-      bookingId,
-      title,
-      content,
-      mouzaName,
-      plotNo,
-      areaSqFt: areaSqFt ? parseFloat(areaSqFt) : null,
-      areaKatha: areaKatha ? parseFloat(areaKatha) : null,
-      areaDecimal: areaDecimal ? parseFloat(areaDecimal) : null,
-      notes,
-      fileUrl: fileUrl || req.body.fileUrl // fallback to manual URL if provided
+      clientId: clientId as string,
+      bookingId: (bookingId as string) || null,
+      title: title as string,
+      content: content as string,
+      mouzaName: (mouzaName as string) || null,
+      plotNo: (plotNo as string) || null,
+      areaSqFt: areaSqFt ? parseFloat(areaSqFt.toString()) : null,
+      areaKatha: areaKatha ? parseFloat(areaKatha.toString()) : null,
+      areaDecimal: areaDecimal ? parseFloat(areaDecimal.toString()) : null,
+      notes: (notes as string) || null,
+      fileUrl: (fileUrl as string) || ''
     },
     include: { client: true }
   });
@@ -102,22 +122,52 @@ export const createReport = asyncHandler(async (req: Request, res: Response) => 
 export const updateReport = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
-  const report = await prisma.report.findFirst({
+  const existingReport = await prisma.report.findFirst({
     where: { id: req.params.id as string, userId: req.user.id }
   });
 
-  if (!report) {
+  if (!existingReport) {
     throw new ApiError(404, 'Report not found');
   }
 
-  const data = { ...req.body };
-  if (data.areaSqFt) data.areaSqFt = parseFloat(data.areaSqFt);
-  if (data.areaKatha) data.areaKatha = parseFloat(data.areaKatha);
-  if (data.areaDecimal) data.areaDecimal = parseFloat(data.areaDecimal);
+  // Parse JSON data from the "data" field in FormData (same as create)
+  let bodyData;
+  try {
+    bodyData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body;
+  } catch (error) {
+    throw new ApiError(400, 'Invalid JSON format in data field');
+  }
+
+  const { 
+    title, content, clientId, bookingId,
+    mouzaName, plotNo, areaSqFt, areaKatha, areaDecimal, notes
+  } = bodyData;
+
+  // Handle file upload if a new file is provided
+  let fileUrl = existingReport.fileUrl;
+  if (req.file) {
+    const cloudinaryResponse = await uploadOnCloudinary(req.file.path);
+    if (cloudinaryResponse) {
+      fileUrl = cloudinaryResponse.secure_url;
+    }
+  }
+
+  const updateData: any = {};
+  if (title !== undefined) updateData.title = title;
+  if (content !== undefined) updateData.content = content;
+  if (clientId !== undefined) updateData.clientId = clientId;
+  if (bookingId !== undefined) updateData.bookingId = bookingId || null;
+  if (mouzaName !== undefined) updateData.mouzaName = mouzaName || null;
+  if (plotNo !== undefined) updateData.plotNo = plotNo || null;
+  if (areaSqFt !== undefined) updateData.areaSqFt = areaSqFt ? parseFloat(areaSqFt.toString()) : null;
+  if (areaKatha !== undefined) updateData.areaKatha = areaKatha ? parseFloat(areaKatha.toString()) : null;
+  if (areaDecimal !== undefined) updateData.areaDecimal = areaDecimal ? parseFloat(areaDecimal.toString()) : null;
+  if (notes !== undefined) updateData.notes = notes || null;
+  if (fileUrl !== undefined) updateData.fileUrl = fileUrl;
 
   const updatedReport = await prisma.report.update({
     where: { id: req.params.id as string },
-    data,
+    data: updateData,
     include: { client: true }
   });
 

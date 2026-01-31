@@ -445,7 +445,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/bookings?filter=all&date=&search=&page=1&pageSize=10",
+							"raw": "{{base_url}}/bookings?filter=all&date=&search=&clientId=&page=1&pageSize=10",
 							"host": [
 								"{{base_url}}"
 							],
@@ -467,6 +467,11 @@
 									"key": "search",
 									"value": "",
 									"description": "Search by booking title or client name"
+								},
+								{
+									"key": "clientId",
+									"value": "",
+									"description": "Filter bookings by specific client ID"
 								},
 								{
 									"key": "page",
@@ -862,33 +867,8 @@
 							"mode": "formdata",
 							"formdata": [
 								{
-									"key": "title",
-									"value": "Survey Report - Plot 102",
-									"type": "text"
-								},
-								{
-									"key": "content",
-									"value": "Survey completed for plot 102...",
-									"type": "text"
-								},
-								{
-									"key": "clientId",
-									"value": "REPLACE_WITH_CLIENT_ID",
-									"type": "text"
-								},
-								{
-									"key": "bookingId",
-									"value": "REPLACE_WITH_BOOKING_ID",
-									"type": "text"
-								},
-								{
-									"key": "mouzaName",
-									"value": "Jadavpur",
-									"type": "text"
-								},
-								{
-									"key": "plotNo",
-									"value": "102",
+									"key": "data",
+									"value": "{\n    \"title\": \"Survey Report - Plot 102\",\n    \"content\": \"Survey completed for plot 102...\",\n    \"clientId\": \"REPLACE_WITH_CLIENT_ID\",\n    \"bookingId\": \"REPLACE_WITH_BOOKING_ID\",\n    \"mouzaName\": \"Jadavpur\",\n    \"plotNo\": \"102\",\n    \"areaSqFt\": 3200,\n    \"areaKatha\": 4.4,\n    \"areaDecimal\": 7.3,\n    \"notes\": \"No disputes found.\"\n}",
 									"type": "text"
 								},
 								{

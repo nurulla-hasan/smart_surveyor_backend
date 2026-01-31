@@ -11,6 +11,7 @@ export const getBookings = asyncHandler(async (req: Request, res: Response) => {
   const filter = (req.query.filter as string) || 'all';
   const dateStr = req.query.date as string | undefined;
   const search = req.query.search as string | undefined;
+  const clientId = req.query.clientId as string | undefined;
   const page = parseInt(req.query.page as string) || 1;
   const pageSize = parseInt(req.query.pageSize as string) || 10;
   const userId = req.user.id;
@@ -19,6 +20,11 @@ export const getBookings = asyncHandler(async (req: Request, res: Response) => {
   today.setHours(0, 0, 0, 0);
 
   const where: any = { userId };
+
+  // Client filter
+  if (clientId) {
+    where.clientId = clientId;
+  }
 
   // Search logic
   if (search) {
@@ -55,7 +61,11 @@ export const getBookings = asyncHandler(async (req: Request, res: Response) => {
   const [bookings, totalCount] = await Promise.all([
     prisma.booking.findMany({
       where,
-      include: { client: { select: { id: true, name: true, email: true, phone: true } } },
+      include: { 
+        client: { select: { id: true, name: true, email: true, phone: true } },
+        calculations: { orderBy: { createdAt: 'desc' }, take: 1 },
+        savedMaps: { orderBy: { createdAt: 'desc' }, take: 1 }
+      },
       orderBy: { bookingDate: filter === 'past' ? 'desc' : 'asc' },
       skip,
       take: pageSize
@@ -79,7 +89,11 @@ export const getBooking = asyncHandler(async (req: Request, res: Response) => {
 
   const booking = await prisma.booking.findFirst({
     where: { id: req.params.id as string, userId: req.user.id },
-    include: { client: true }
+    include: { 
+      client: { select: { id: true, name: true, email: true, phone: true } },
+      calculations: { orderBy: { createdAt: 'desc' } },
+      savedMaps: { orderBy: { createdAt: 'desc' } }
+    }
   });
 
   if (!booking) {

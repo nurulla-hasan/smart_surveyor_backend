@@ -21,7 +21,7 @@ router
 router
   .route('/:id')
   .get(getReport)
-  .put(updateReport)
+  .put(upload.single('reportFile'), updateReport)
   .delete(deleteReport);
 
 export default router;
