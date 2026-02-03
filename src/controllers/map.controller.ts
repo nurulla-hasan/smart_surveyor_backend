@@ -9,16 +9,35 @@ export const getMaps = asyncHandler(async (req: Request, res: Response) => {
 
   const page = parseInt(req.query.page as string) || 1;
   const pageSize = parseInt(req.query.pageSize as string) || 10;
+  const search = req.query.search as string || '';
   const skip = (page - 1) * pageSize;
+
+  const where: any = { userId: req.user.id };
+
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { booking: { title: { contains: search, mode: 'insensitive' } } },
+      { booking: { propertyAddress: { contains: search, mode: 'insensitive' } } }
+    ];
+  }
 
   const [maps, totalCount] = await Promise.all([
     prisma.savedMap.findMany({
-      where: { userId: req.user.id },
+      where,
+      include: {
+        booking: {
+          select: {
+            title: true,
+            propertyAddress: true
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' },
       skip,
       take: pageSize
     }),
-    prisma.savedMap.count({ where: { userId: req.user.id } })
+    prisma.savedMap.count({ where })
   ]);
 
   res.status(200).json(new ApiResponse(200, {
