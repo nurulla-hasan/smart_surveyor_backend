@@ -52,6 +52,7 @@ model Notification {
   title     String
   message   String
   type      String   // NEW_BOOKING, STATUS_UPDATE, MISSED_APPOINTMENT, etc.
+  link      String?
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

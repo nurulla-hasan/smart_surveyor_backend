@@ -230,7 +230,8 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
       userId: targetUserId,
       type: 'NEW_BOOKING',
       title: 'নতুন বুকিং',
-      message: `${(req.user as any).name} একটি নতুন সার্ভে বুক করেছেন।`
+      message: `${(req.user as any).name} একটি নতুন সার্ভে বুক করেছেন।`,
+      link: '/bookings?tab=pending'
     }
   });
 
@@ -299,7 +300,8 @@ export const updateBooking = asyncHandler(async (req: Request, res: Response) =>
           userId: updatedBooking.client.accountId,
           type: 'STATUS_UPDATE',
           title,
-          message
+          message,
+          link: `/bookings?tab=${data.status === 'scheduled' ? 'upcoming' : data.status === 'cancelled' ? 'past' : 'pending'}`
         }
       });
     }
