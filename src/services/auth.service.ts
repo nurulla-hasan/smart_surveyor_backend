@@ -84,4 +84,27 @@ export class AuthService {
       throw new ApiError(401, 'Invalid refresh token');
     }
   }
+
+  static async changePassword(userId: string, currentPasswordText: string, newPasswordText: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+      throw new ApiError(404, 'User not found');
+    }
+
+    const isMatch = await comparePassword(currentPasswordText, user.password);
+
+    if (!isMatch) {
+      throw new ApiError(401, 'Current password is incorrect');
+    }
+
+    const hashedNewPassword = await hashPassword(newPasswordText);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedNewPassword }
+    });
+
+    return true;
+  }
 }

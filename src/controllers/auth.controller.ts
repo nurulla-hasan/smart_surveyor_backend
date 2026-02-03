@@ -64,3 +64,16 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
 export const logout = asyncHandler(async (_req: Request, res: Response) => {
   res.status(200).json(new ApiResponse(200, {}, 'User logged out successfully'));
 });
+
+export const changePassword = asyncHandler(async (req: Request, res: Response) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    throw new ApiError(400, 'Please provide current and new password');
+  }
+
+  // @ts-ignore
+  await AuthService.changePassword(req.user.id, currentPassword, newPassword);
+
+  res.status(200).json(new ApiResponse(200, {}, 'Password changed successfully'));
+});
