@@ -30,7 +30,9 @@ export const getBookings = asyncHandler(async (req: Request, res: Response) => {
   if (search) {
     where.OR = [
       { title: { contains: search, mode: 'insensitive' } },
-      { client: { name: { contains: search, mode: 'insensitive' } } }
+      { propertyAddress: { contains: search, mode: 'insensitive' } },
+      { client: { name: { contains: search, mode: 'insensitive' } } },
+      { client: { phone: { contains: search, mode: 'insensitive' } } }
     ];
   }
 
