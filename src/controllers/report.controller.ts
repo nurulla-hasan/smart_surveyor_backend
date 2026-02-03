@@ -116,6 +116,19 @@ export const createReport = asyncHandler(async (req: Request, res: Response) => 
     include: { client: true }
   });
 
+  // Create notification for the client if they have an account
+  if (report.client.accountId) {
+    await prisma.notification.create({
+      data: {
+        userId: report.client.accountId,
+        type: 'REPORT_PUBLISHED',
+        title: 'নতুন রিপোর্ট আপলোড',
+        message: `আপনার "${report.title}" এর সার্ভে রিপোর্টটি আপলোড করা হয়েছে।`,
+        link: '/reports'
+      }
+    });
+  }
+
   res.status(201).json(new ApiResponse(201, report, 'Report created successfully'));
 });
 
@@ -170,6 +183,19 @@ export const updateReport = asyncHandler(async (req: Request, res: Response) => 
     data: updateData,
     include: { client: true }
   });
+
+  // Create notification for the client if they have an account
+  if (updatedReport.client.accountId) {
+    await prisma.notification.create({
+      data: {
+        userId: updatedReport.client.accountId,
+        type: 'REPORT_UPDATED',
+        title: 'রিপোর্ট আপডেট',
+        message: `আপনার "${updatedReport.title}" এর সার্ভে রিপোর্টটি আপডেট করা হয়েছে।`,
+        link: '/reports'
+      }
+    });
+  }
 
   res.status(200).json(new ApiResponse(200, updatedReport, 'Report updated successfully'));
 });

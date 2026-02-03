@@ -309,6 +309,22 @@ export const updateBooking = asyncHandler(async (req: Request, res: Response) =>
     }
   }
 
+  // Create notification for payment update
+  if ((data.amountReceived !== undefined && data.amountReceived !== booking.amountReceived) || 
+      (data.amountDue !== undefined && data.amountDue !== booking.amountDue)) {
+    if (updatedBooking.client.accountId) {
+      await prisma.notification.create({
+        data: {
+          userId: updatedBooking.client.accountId,
+          type: 'PAYMENT_UPDATE',
+          title: 'পেমেন্ট আপডেট',
+          message: `আপনার "${updatedBooking.title}" বুকিংয়ের পেমেন্ট তথ্য আপডেট করা হয়েছে। বকেয়া: ৳${updatedBooking.amountDue}`,
+          link: '/bookings'
+        }
+      });
+    }
+  }
+
   res.status(200).json(new ApiResponse(200, updatedBooking, 'Booking updated successfully'));
 });
 

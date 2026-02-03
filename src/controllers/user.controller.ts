@@ -19,25 +19,48 @@ export const getProfile = asyncHandler(async (req: Request, res: Response) => {
 export const updateProfile = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
+  // Parse JSON data from the "data" field in FormData if it exists
+  let bodyData = req.body;
+  if (req.body.data) {
+    try {
+      bodyData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
+    } catch (error) {
+      console.error('JSON Parse Error in updateProfile:', error);
+      // Fallback to req.body if parsing fails
+    }
+  }
+
+  console.log('Update Profile Processed Body:', bodyData);
+  console.log('Update Profile File:', req.file);
+
   const fields = ['name', 'phone', 'companyName', 'licenseNo', 'address', 'experience', 'location', 'bio'];
   const data: any = {};
   
   fields.forEach(field => {
-    if (req.body[field] !== undefined) {
+    if (bodyData[field] !== undefined) {
       if (field === 'experience') {
-        data[field] = parseInt(req.body[field]);
+        const exp = parseInt(bodyData[field]);
+        if (!isNaN(exp)) data[field] = exp;
       } else {
-        data[field] = req.body[field];
+        data[field] = bodyData[field];
       }
     }
   });
 
   // Handle profile image upload
   if (req.file) {
-    const cloudinaryResponse = await uploadOnCloudinary(req.file.path);
-    if (cloudinaryResponse) {
-      data.profileImage = cloudinaryResponse.secure_url;
+    try {
+      const cloudinaryResponse = await uploadOnCloudinary(req.file.path);
+      if (cloudinaryResponse) {
+        data.profileImage = cloudinaryResponse.secure_url;
+      }
+    } catch (error) {
+      console.error('Cloudinary upload error:', error);
     }
+  }
+
+  if (Object.keys(data).length === 0) {
+    return res.status(200).json(new ApiResponse(200, req.user, 'No changes to update'));
   }
 
   const user = await prisma.user.update({
