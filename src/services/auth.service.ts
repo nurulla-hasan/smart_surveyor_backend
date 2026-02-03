@@ -25,6 +25,7 @@ export class AuthService {
         companyName: true,
         licenseNo: true,
         address: true,
+        profileImage: true,
         createdAt: true,
         updatedAt: true
       }
@@ -69,6 +70,7 @@ export class AuthService {
           companyName: true,
           licenseNo: true,
           address: true,
+          profileImage: true,
           createdAt: true,
           updatedAt: true
         }

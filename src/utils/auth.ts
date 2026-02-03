@@ -12,6 +12,7 @@ export const generateToken = (user: any) => {
       companyName: user.companyName,
       licenseNo: user.licenseNo,
       address: user.address,
+      profileImage: user.profileImage,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     }, 
