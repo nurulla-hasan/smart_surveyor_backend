@@ -4,6 +4,7 @@ import ApiResponse from '../utils/ApiResponse.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import ApiError from '../utils/ApiError.js';
 import { uploadOnCloudinary } from '../utils/cloudinary.js';
+import { generateToken } from '../utils/auth.js';
 
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
@@ -69,7 +70,14 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
   });
 
   const { password, ...userWithoutPassword } = user;
-  res.status(200).json(new ApiResponse(200, userWithoutPassword, 'Profile updated successfully'));
+  
+  // Generate new token with updated data
+  const accessToken = generateToken(userWithoutPassword);
+
+  res.status(200).json(new ApiResponse(200, {
+    user: userWithoutPassword,
+    accessToken
+  }, 'Profile updated successfully'));
 });
 
 export const getSurveyors = asyncHandler(async (req: Request, res: Response) => {

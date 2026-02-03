@@ -25,6 +25,11 @@ export class AuthService {
         companyName: true,
         licenseNo: true,
         address: true,
+        experience: true,
+        location: true,
+        bio: true,
+        rating: true,
+        totalReviews: true,
         profileImage: true,
         createdAt: true,
         updatedAt: true
@@ -70,6 +75,11 @@ export class AuthService {
           companyName: true,
           licenseNo: true,
           address: true,
+          experience: true,
+          location: true,
+          bio: true,
+          rating: true,
+          totalReviews: true,
           profileImage: true,
           createdAt: true,
           updatedAt: true
