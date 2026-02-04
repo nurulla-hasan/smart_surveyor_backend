@@ -50,6 +50,16 @@ export const markAllAsRead = asyncHandler(async (req: Request, res: Response) =>
   res.status(200).json(new ApiResponse(200, {}, 'All notifications marked as read'));
 });
 
+export const clearAllNotifications = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) throw new ApiError(401, 'Not authorized');
+
+  await prisma.notification.deleteMany({
+    where: { userId: req.user.id }
+  });
+
+  res.status(200).json(new ApiResponse(200, {}, 'All notifications cleared successfully'));
+});
+
 export const deleteNotification = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
