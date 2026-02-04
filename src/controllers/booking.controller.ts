@@ -400,8 +400,17 @@ export const getUpcomingBookings = asyncHandler(async (req: Request, res: Respon
 export const getCalendarData = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
-  const month = req.query.month ? parseInt(req.query.month as string) : new Date().getUTCMonth() + 1;
-  const year = req.query.year ? parseInt(req.query.year as string) : new Date().getUTCFullYear();
+  let month = req.query.month ? parseInt(req.query.month as string) : new Date().getUTCMonth() + 1;
+  let year = req.query.year ? parseInt(req.query.year as string) : new Date().getUTCFullYear();
+  
+  // Validate month and year
+  if (isNaN(month) || month < 1 || month > 12) {
+    month = new Date().getUTCMonth() + 1;
+  }
+  if (isNaN(year) || year < 1900 || year > 2100) {
+    year = new Date().getUTCFullYear();
+  }
+
   const userId = req.user.id;
 
   const startDate = new Date(Date.UTC(year, month - 1, 1));
