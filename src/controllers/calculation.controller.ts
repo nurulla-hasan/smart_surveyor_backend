@@ -7,13 +7,42 @@ import ApiError from '../utils/ApiError.js';
 export const getCalculations = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
-  const calculations = await prisma.calculation.findMany({
-    where: { userId: req.user.id },
-    orderBy: { createdAt: 'desc' },
-    include: { booking: { select: { title: true } } }
-  });
+  const page = parseInt(req.query.page as string) || 1;
+  const pageSize = parseInt(req.query.pageSize as string) || 10;
+  const search = req.query.search as string | undefined;
+  const userId = req.user.id;
 
-  res.status(200).json(new ApiResponse(200, calculations, 'Calculations fetched successfully'));
+  const skip = (page - 1) * pageSize;
+
+  const where: any = { userId };
+
+  if (search) {
+    where.OR = [
+      { title: { contains: search, mode: 'insensitive' } },
+      { booking: { title: { contains: search, mode: 'insensitive' } } }
+    ];
+  }
+
+  const [calculations, totalCount] = await Promise.all([
+    prisma.calculation.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: { booking: { select: { title: true, client: { select: { name: true } } } } },
+      skip,
+      take: pageSize
+    }),
+    prisma.calculation.count({ where })
+  ]);
+
+  res.status(200).json(new ApiResponse(200, {
+    calculations,
+    meta: {
+      totalItems: totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page,
+      pageSize: pageSize
+    }
+  }, 'Calculations fetched successfully'));
 });
 
 export const saveCalculation = asyncHandler(async (req: Request, res: Response) => {
