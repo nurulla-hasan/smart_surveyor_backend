@@ -358,13 +358,7 @@
 					"name": "Get Surveyors",
 					"request": {
 						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}",
-								"type": "text"
-							}
-						],
+						"header": [],
 						"url": {
 							"raw": "{{base_url}}/users/surveyors?location=Dinajpur&sortBy=rating&minExperience=2",
 							"host": [
@@ -392,7 +386,7 @@
 								}
 							]
 						},
-						"description": "Get a list of all available surveyors with marketplace filtering. Useful for client portal."
+						"description": "Get a list of all available surveyors with marketplace filtering. [PUBLIC - No Token Required]"
 					},
 					"response": []
 				},
@@ -400,13 +394,7 @@
 					"name": "Get Surveyor Profile",
 					"request": {
 						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}",
-								"type": "text"
-							}
-						],
+						"header": [],
 						"url": {
 							"raw": "{{base_url}}/users/surveyors/:id",
 							"host": [
@@ -424,7 +412,7 @@
 								}
 							]
 						},
-						"description": "Get full profile of a surveyor including experience, rating, and job stats."
+						"description": "Get full profile of a surveyor including experience, rating, and job stats. [PUBLIC - No Token Required]"
 					},
 					"response": []
 				}
@@ -597,15 +585,9 @@
 					"name": "Get Calendar Data",
 					"request": {
 						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}",
-								"type": "text"
-							}
-						],
+						"header": [],
 						"url": {
-							"raw": "{{base_url}}/bookings/calendar?month=2&year=2026",
+							"raw": "{{base_url}}/bookings/calendar?month=2&year=2026&surveyorId=",
 							"host": [
 								"{{base_url}}"
 							],
@@ -623,10 +605,15 @@
 									"key": "year",
 									"value": "2026",
 									"description": "Filter by year"
+								},
+								{
+									"key": "surveyorId",
+									"value": "",
+									"description": "Optional: Filter by specific surveyor ID. If omitted and not logged in, returns first available surveyor."
 								}
 							]
 						},
-						"description": "Get both blocked and booked dates for the calendar view. Red dots = blockedDates, Orange dots = bookedDates."
+						"description": "Get both blocked and booked dates for the calendar view. Red dots = blockedDates, Orange dots = bookedDates. [PUBLIC - No Token Required]"
 					},
 					"response": []
 				},

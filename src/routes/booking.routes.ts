@@ -12,10 +12,11 @@ import { protect } from '../middlewares/auth.middleware.js';
 
 const router: Router = express.Router();
 
+router.get('/calendar', getCalendarData);
+
 router.use(protect);
 
 router.get('/upcoming', getUpcomingBookings);
-router.get('/calendar', getCalendarData);
 
 router
   .route('/')

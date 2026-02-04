@@ -398,7 +398,25 @@ export const getUpcomingBookings = asyncHandler(async (req: Request, res: Respon
 });
 
 export const getCalendarData = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.user) throw new ApiError(401, 'Not authorized');
+  let userId: string | undefined;
+  const { surveyorId } = req.query;
+
+  if (surveyorId) {
+    userId = surveyorId as string;
+  } else if (req.user) {
+    userId = req.user.id;
+  } else {
+    // If not logged in and no surveyorId provided, find the first surveyor or admin
+    const defaultSurveyor = await prisma.user.findFirst({
+      where: { role: { in: ['surveyor', 'admin'] } },
+      select: { id: true }
+    });
+    
+    if (!defaultSurveyor) {
+      throw new ApiError(404, 'No surveyor found');
+    }
+    userId = defaultSurveyor.id;
+  }
 
   let month = req.query.month ? parseInt(req.query.month as string) : new Date().getUTCMonth() + 1;
   let year = req.query.year ? parseInt(req.query.year as string) : new Date().getUTCFullYear();
@@ -410,8 +428,6 @@ export const getCalendarData = asyncHandler(async (req: Request, res: Response) 
   if (isNaN(year) || year < 1900 || year > 2100) {
     year = new Date().getUTCFullYear();
   }
-
-  const userId = req.user.id;
 
   const startDate = new Date(Date.UTC(year, month - 1, 1));
   const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));

@@ -10,10 +10,10 @@ import { upload } from '../middlewares/multer.middleware.js';
 
 const router: Router = express.Router();
 
-router.use(protect);
-
 router.get('/surveyors', getSurveyors);
 router.get('/surveyors/:id', getSurveyorProfile);
+
+router.use(protect);
 
 router
   .route('/profile')
