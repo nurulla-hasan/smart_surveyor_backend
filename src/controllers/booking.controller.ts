@@ -14,12 +14,14 @@ export const getBookings = asyncHandler(async (req: Request, res: Response) => {
   const clientId = req.query.clientId as string | undefined;
   const page = parseInt(req.query.page as string) || 1;
   const pageSize = parseInt(req.query.pageSize as string) || 10;
-  const userId = req.user.id;
+  
+  // If user is a client, we should show bookings where they are the client
+  const where: any = req.user.role === 'client' 
+    ? { client: { accountId: req.user.id } }
+    : { userId: req.user.id };
   
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
-  const where: any = { userId };
 
   // Client filter
   if (clientId) {
@@ -89,8 +91,12 @@ export const getBookings = asyncHandler(async (req: Request, res: Response) => {
 export const getBooking = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
+  const where: any = req.user.role === 'client'
+    ? { id: req.params.id as string, client: { accountId: req.user.id } }
+    : { id: req.params.id as string, userId: req.user.id };
+
   const booking = await prisma.booking.findFirst({
-    where: { id: req.params.id as string, userId: req.user.id },
+    where,
     include: { 
       client: { select: { id: true, name: true, email: true, phone: true } },
       calculations: { orderBy: { createdAt: 'desc' } },
@@ -226,16 +232,24 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
     include: { client: true }
   });
 
-  // Create notification for the surveyor
-  await prisma.notification.create({
-    data: {
-      userId: targetUserId,
-      type: 'NEW_BOOKING',
-      title: 'নতুন বুকিং',
-      message: `${(req.user as any).name} একটি নতুন সার্ভে বুক করেছেন।`,
-      link: '/bookings?tab=pending'
+  // Create notification for the surveyor (only if the one creating it is NOT the surveyor themselves)
+  if (req.user.id !== targetUserId) {
+    try {
+      const clientName = (req.user as any).name || 'A client';
+      await prisma.notification.create({
+        data: {
+          userId: targetUserId,
+          type: 'NEW_BOOKING',
+          title: 'New Booking Request',
+          message: `${clientName} has booked a new survey.`,
+          link: '/dashboard/bookings?filter=pending'
+        }
+      });
+      console.log(`Notification created for surveyor ${targetUserId}`);
+    } catch (notifError) {
+      console.error('Error creating notification:', notifError);
     }
-  });
+  }
 
   res.status(201).json(new ApiResponse(201, booking, 'Booking created successfully'));
 });
@@ -243,8 +257,12 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
 export const updateBooking = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
+  const where: any = req.user.role === 'client'
+    ? { id: req.params.id as string, client: { accountId: req.user.id } }
+    : { id: req.params.id as string, userId: req.user.id };
+
   const booking = await prisma.booking.findFirst({
-    where: { id: req.params.id as string, userId: req.user.id }
+    where
   });
 
   if (!booking) {
@@ -284,28 +302,32 @@ export const updateBooking = asyncHandler(async (req: Request, res: Response) =>
 
   // Create notification if status is updated
   if (data.status && data.status !== booking.status) {
-    let title = 'বুকিং আপডেট';
-    let message = `আপনার বুকিং স্ট্যাটাস পরিবর্তন করে "${data.status}" করা হয়েছে।`;
+    let title = 'Booking Update';
+    let message = `Your booking status has been changed to "${data.status}".`;
 
     if (data.status === 'scheduled') {
-      title = 'বুকিং অনুমোদিত';
-      message = `আপনার বুকিংটি অনুমোদিত হয়েছে এবং ${new Date(updatedBooking.bookingDate).toLocaleDateString()} তারিখে নির্ধারিত হয়েছে।`;
+      title = 'Booking Approved';
+      message = `Your booking has been approved and scheduled for ${new Date(updatedBooking.bookingDate).toLocaleDateString()}.`;
     } else if (data.status === 'cancelled') {
-      title = 'বুকিং বাতিল';
-      message = `আপনার বুকিংটি বাতিল করা হয়েছে।`;
+      title = 'Booking Cancelled';
+      message = `Your booking has been cancelled.`;
     }
 
     // Notify the client
     if (updatedBooking.client.accountId) {
-      await prisma.notification.create({
-        data: {
-          userId: updatedBooking.client.accountId,
-          type: 'STATUS_UPDATE',
-          title,
-          message,
-          link: `/bookings?tab=${data.status === 'scheduled' ? 'upcoming' : data.status === 'cancelled' ? 'past' : 'pending'}`
-        }
-      });
+      try {
+        await prisma.notification.create({
+          data: {
+            userId: updatedBooking.client.accountId,
+            type: 'STATUS_UPDATE',
+            title,
+            message,
+            link: '/dashboard/bookings'
+          }
+        });
+      } catch (notifError) {
+        console.error('Error creating status update notification:', notifError);
+      }
     }
   }
 
@@ -313,15 +335,19 @@ export const updateBooking = asyncHandler(async (req: Request, res: Response) =>
   if ((data.amountReceived !== undefined && data.amountReceived !== booking.amountReceived) || 
       (data.amountDue !== undefined && data.amountDue !== booking.amountDue)) {
     if (updatedBooking.client.accountId) {
-      await prisma.notification.create({
-        data: {
-          userId: updatedBooking.client.accountId,
-          type: 'PAYMENT_UPDATE',
-          title: 'পেমেন্ট আপডেট',
-          message: `আপনার "${updatedBooking.title}" বুকিংয়ের পেমেন্ট তথ্য আপডেট করা হয়েছে। বকেয়া: ৳${updatedBooking.amountDue}`,
-          link: '/bookings'
-        }
-      });
+      try {
+        await prisma.notification.create({
+          data: {
+            userId: updatedBooking.client.accountId,
+            type: 'PAYMENT_UPDATE',
+            title: 'Payment Updated',
+            message: `Payment information for your booking "${updatedBooking.title}" has been updated. Due: TK ${updatedBooking.amountDue}`,
+            link: '/dashboard/bookings'
+          }
+        });
+      } catch (notifError) {
+        console.error('Error creating payment update notification:', notifError);
+      }
     }
   }
 
@@ -331,8 +357,12 @@ export const updateBooking = asyncHandler(async (req: Request, res: Response) =>
 export const deleteBooking = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
+  const where: any = req.user.role === 'client'
+    ? { id: req.params.id as string, client: { accountId: req.user.id } }
+    : { id: req.params.id as string, userId: req.user.id };
+
   const booking = await prisma.booking.findFirst({
-    where: { id: req.params.id as string, userId: req.user.id }
+    where
   });
 
   if (!booking) {
@@ -353,12 +383,12 @@ export const getUpcomingBookings = asyncHandler(async (req: Request, res: Respon
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const where: any = req.user.role === 'client'
+    ? { client: { accountId: req.user.id }, bookingDate: { gte: today }, status: { not: 'cancelled' as BookingStatus } }
+    : { userId: req.user.id, bookingDate: { gte: today }, status: { not: 'cancelled' as BookingStatus } };
+
   const bookings = await prisma.booking.findMany({
-    where: {
-      userId: req.user.id,
-      bookingDate: { gte: today },
-      status: { not: 'cancelled' as BookingStatus }
-    },
+    where,
     orderBy: { bookingDate: 'asc' },
     take: limit,
     include: { client: { select: { name: true } } }

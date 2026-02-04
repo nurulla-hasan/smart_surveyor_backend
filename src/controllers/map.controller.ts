@@ -61,16 +61,33 @@ export const saveMap = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(400, 'Invalid Booking ID format');
   }
 
-  const map = await prisma.savedMap.create({
-    data: {
-      userId: req.user.id,
-      bookingId: bookingId || null,
-      name,
-      data,
-      area: area ? parseFloat(area) : null,
-      perimeter: perimeter ? parseFloat(perimeter) : null,
-      fileUrl
+  // Start a transaction to ensure atomicity
+  const map = await prisma.$transaction(async (tx) => {
+    // If bookingId is provided, delete existing calculations and maps for this booking
+    if (bookingId) {
+      // 1. Delete existing calculations for this booking
+      await tx.calculation.deleteMany({
+        where: { bookingId, userId: req.user!.id }
+      });
+
+      // 2. Delete existing maps for this booking
+      await tx.savedMap.deleteMany({
+        where: { bookingId, userId: req.user!.id }
+      });
     }
+
+    // 3. Create the new map
+    return await tx.savedMap.create({
+      data: {
+        userId: req.user!.id,
+        bookingId: bookingId || null,
+        name,
+        data,
+        area: area ? parseFloat(area) : null,
+        perimeter: perimeter ? parseFloat(perimeter) : null,
+        fileUrl
+      }
+    });
   });
 
   res.status(201).json(new ApiResponse(201, map, 'Map saved successfully'));

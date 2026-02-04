@@ -50,15 +50,32 @@ export const saveCalculation = asyncHandler(async (req: Request, res: Response) 
 
   const { title, type, inputData, resultData, bookingId } = req.body;
 
-  const calculation = await prisma.calculation.create({
-    data: {
-      userId: req.user.id,
-      title,
-      bookingId,
-      type,
-      inputData,
-      resultData
+  // Start a transaction to ensure atomicity
+  const calculation = await prisma.$transaction(async (tx) => {
+    // If bookingId is provided, delete existing calculations and maps for this booking
+    if (bookingId) {
+      // 1. Delete existing calculations for this booking
+      await tx.calculation.deleteMany({
+        where: { bookingId, userId: req.user!.id }
+      });
+
+      // 2. Delete existing maps for this booking
+      await tx.savedMap.deleteMany({
+        where: { bookingId, userId: req.user!.id }
+      });
     }
+
+    // 3. Create the new calculation
+    return await tx.calculation.create({
+      data: {
+        userId: req.user!.id,
+        title,
+        bookingId,
+        type,
+        inputData,
+        resultData
+      }
+    });
   });
 
   res.status(201).json(new ApiResponse(201, calculation, 'Calculation saved successfully'));

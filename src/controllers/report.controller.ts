@@ -11,11 +11,12 @@ export const getReports = asyncHandler(async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const pageSize = parseInt(req.query.pageSize as string) || 10;
   const search = req.query.search as string | undefined;
-  const userId = req.user.id;
 
   const skip = (page - 1) * pageSize;
 
-  const where: any = { userId };
+  const where: any = req.user.role === 'client'
+    ? { client: { accountId: req.user.id } }
+    : { userId: req.user.id };
 
   if (search) {
     where.OR = [
@@ -51,8 +52,12 @@ export const getReports = asyncHandler(async (req: Request, res: Response) => {
 export const getReport = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
+  const where: any = req.user.role === 'client'
+    ? { id: req.params.id as string, client: { accountId: req.user.id } }
+    : { id: req.params.id as string, userId: req.user.id };
+
   const report = await prisma.report.findFirst({
-    where: { id: req.params.id as string, userId: req.user.id },
+    where,
     include: { 
       client: { select: { id: true, name: true, email: true, phone: true } },
       booking: { select: { id: true, title: true, bookingDate: true } }
@@ -118,15 +123,19 @@ export const createReport = asyncHandler(async (req: Request, res: Response) => 
 
   // Create notification for the client if they have an account
   if (report.client.accountId) {
-    await prisma.notification.create({
-      data: {
-        userId: report.client.accountId,
-        type: 'REPORT_PUBLISHED',
-        title: 'নতুন রিপোর্ট আপলোড',
-        message: `আপনার "${report.title}" এর সার্ভে রিপোর্টটি আপলোড করা হয়েছে।`,
-        link: '/reports'
-      }
-    });
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: report.client.accountId,
+          type: 'REPORT_PUBLISHED',
+          title: 'New Report Published',
+          message: `The survey report for "${report.title}" has been published.`,
+          link: '/dashboard/reports'
+        }
+      });
+    } catch (notifError) {
+      console.error('Error creating report notification:', notifError);
+    }
   }
 
   res.status(201).json(new ApiResponse(201, report, 'Report created successfully'));
@@ -186,15 +195,19 @@ export const updateReport = asyncHandler(async (req: Request, res: Response) => 
 
   // Create notification for the client if they have an account
   if (updatedReport.client.accountId) {
-    await prisma.notification.create({
-      data: {
-        userId: updatedReport.client.accountId,
-        type: 'REPORT_UPDATED',
-        title: 'রিপোর্ট আপডেট',
-        message: `আপনার "${updatedReport.title}" এর সার্ভে রিপোর্টটি আপডেট করা হয়েছে।`,
-        link: '/reports'
-      }
-    });
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: updatedReport.client.accountId,
+          type: 'REPORT_UPDATED',
+          title: 'Report Updated',
+          message: `The survey report for "${updatedReport.title}" has been updated.`,
+          link: '/dashboard/reports'
+        }
+      });
+    } catch (notifError) {
+      console.error('Error creating report update notification:', notifError);
+    }
   }
 
   res.status(200).json(new ApiResponse(200, updatedReport, 'Report updated successfully'));
