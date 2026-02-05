@@ -402,20 +402,15 @@ export const getCalendarData = asyncHandler(async (req: Request, res: Response) 
   const { surveyorId } = req.query;
 
   if (surveyorId) {
+    // If surveyorId is provided, use it (typically for public view)
     userId = surveyorId as string;
   } else if (req.user) {
+    // If logged in and no surveyorId in query, strictly use the logged-in user's ID
     userId = req.user.id;
   } else {
-    // If not logged in and no surveyorId provided, find the first surveyor or admin
-    const defaultSurveyor = await prisma.user.findFirst({
-      where: { role: { in: ['surveyor', 'admin'] } },
-      select: { id: true }
-    });
-    
-    if (!defaultSurveyor) {
-      throw new ApiError(404, 'No surveyor found');
-    }
-    userId = defaultSurveyor.id;
+    // If not logged in and no surveyorId provided, this should be an error or return empty
+    // To prevent data leakage, we won't return a "default" surveyor's data
+    return res.status(200).json(new ApiResponse(200, { blockedDates: [], bookedDates: [] }, 'No surveyor context found'));
   }
 
   let month = req.query.month ? parseInt(req.query.month as string) : new Date().getUTCMonth() + 1;
