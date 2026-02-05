@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "smart-surveyor-api",
 		"name": "Smart Surveyor API - Full Copy",
-		"description": "API documentation for the Smart Surveyor backend. Paginated responses include a `meta` object with `totalItems`, `totalPages`, `currentPage`, and `limit`.",
+		"description": "API documentation for the Smart Surveyor backend. Paginated responses include a `meta` object with `total`, `totalPages`, `page`, and `limit`.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
