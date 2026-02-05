@@ -13,7 +13,7 @@ exports.getClients = (0, asyncHandler_js_1.default)(async (req, res) => {
         throw new ApiError_js_1.default(401, 'Not authorized');
     const searchQuery = req.query.search;
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt((req.query.limit || req.query.limit)) || 10;
     const userId = req.user.id;
     const where = { userId };
     if (searchQuery) {
@@ -36,10 +36,10 @@ exports.getClients = (0, asyncHandler_js_1.default)(async (req, res) => {
     res.status(200).json(new ApiResponse_js_1.default(200, {
         clients,
         meta: {
-            totalItems: totalCount,
-            totalPages: Math.ceil(totalCount / limit),
-            currentPage: page,
-            limit: limit
+            total: totalCount,
+            page,
+            limit,
+            totalPages: Math.ceil(totalCount / limit)
         }
     }, 'Clients fetched successfully'));
 });

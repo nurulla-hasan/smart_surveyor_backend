@@ -10,5 +10,6 @@ export declare class AuthService {
     static refreshToken(token: string): Promise<{
         accessToken: string;
     }>;
+    static changePassword(userId: string, currentPasswordText: string, newPasswordText: string): Promise<boolean>;
 }
 //# sourceMappingURL=auth.service.d.ts.map

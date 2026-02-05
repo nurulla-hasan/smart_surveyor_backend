@@ -16,6 +16,12 @@ const generateToken = (user) => {
         companyName: user.companyName,
         licenseNo: user.licenseNo,
         address: user.address,
+        experience: user.experience,
+        location: user.location,
+        bio: user.bio,
+        rating: user.rating,
+        totalReviews: user.totalReviews,
+        profileImage: user.profileImage,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
     }, process.env.JWT_SECRET, {

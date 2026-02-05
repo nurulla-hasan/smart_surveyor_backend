@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteNotification = exports.markAllAsRead = exports.markAsRead = exports.getNotifications = void 0;
+exports.deleteNotification = exports.clearAllNotifications = exports.markAllAsRead = exports.markAsRead = exports.getNotifications = void 0;
 const prisma_js_1 = require("../lib/prisma.js");
 const ApiResponse_js_1 = __importDefault(require("../utils/ApiResponse.js"));
 const asyncHandler_js_1 = __importDefault(require("../utils/asyncHandler.js"));
@@ -44,6 +44,14 @@ exports.markAllAsRead = (0, asyncHandler_js_1.default)(async (req, res) => {
         data: { isRead: true }
     });
     res.status(200).json(new ApiResponse_js_1.default(200, {}, 'All notifications marked as read'));
+});
+exports.clearAllNotifications = (0, asyncHandler_js_1.default)(async (req, res) => {
+    if (!req.user)
+        throw new ApiError_js_1.default(401, 'Not authorized');
+    await prisma_js_1.prisma.notification.deleteMany({
+        where: { userId: req.user.id }
+    });
+    res.status(200).json(new ApiResponse_js_1.default(200, {}, 'All notifications cleared successfully'));
 });
 exports.deleteNotification = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)

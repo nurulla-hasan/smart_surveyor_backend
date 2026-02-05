@@ -12,24 +12,41 @@ exports.getMaps = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
         throw new ApiError_js_1.default(401, 'Not authorized');
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt((req.query.limit || req.query.limit)) || 10;
+    const search = req.query.search || '';
     const skip = (page - 1) * limit;
+    const where = { userId: req.user.id };
+    if (search) {
+        where.OR = [
+            { name: { contains: search, mode: 'insensitive' } },
+            { booking: { title: { contains: search, mode: 'insensitive' } } },
+            { booking: { propertyAddress: { contains: search, mode: 'insensitive' } } }
+        ];
+    }
     const [maps, totalCount] = await Promise.all([
         prisma_js_1.prisma.savedMap.findMany({
-            where: { userId: req.user.id },
+            where,
+            include: {
+                booking: {
+                    select: {
+                        title: true,
+                        propertyAddress: true
+                    }
+                }
+            },
             orderBy: { createdAt: 'desc' },
             skip,
             take: limit
         }),
-        prisma_js_1.prisma.savedMap.count({ where: { userId: req.user.id } })
+        prisma_js_1.prisma.savedMap.count({ where })
     ]);
     res.status(200).json(new ApiResponse_js_1.default(200, {
         maps,
         meta: {
-            totalItems: totalCount,
-            totalPages: Math.ceil(totalCount / limit),
-            currentPage: page,
-            limit: limit
+            total: totalCount,
+            page,
+            limit,
+            totalPages: Math.ceil(totalCount / limit)
         }
     }, 'Maps fetched successfully'));
 });
@@ -41,16 +58,31 @@ exports.saveMap = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (bookingId && !/^[0-9a-fA-F]{24}$/.test(bookingId)) {
         throw new ApiError_js_1.default(400, 'Invalid Booking ID format');
     }
-    const map = await prisma_js_1.prisma.savedMap.create({
-        data: {
-            userId: req.user.id,
-            bookingId: bookingId || null,
-            name,
-            data,
-            area: area ? parseFloat(area) : null,
-            perimeter: perimeter ? parseFloat(perimeter) : null,
-            fileUrl
+    // Start a transaction to ensure atomicity
+    const map = await prisma_js_1.prisma.$transaction(async (tx) => {
+        // If bookingId is provided, delete existing calculations and maps for this booking
+        if (bookingId) {
+            // 1. Delete existing calculations for this booking
+            await tx.calculation.deleteMany({
+                where: { bookingId, userId: req.user.id }
+            });
+            // 2. Delete existing maps for this booking
+            await tx.savedMap.deleteMany({
+                where: { bookingId, userId: req.user.id }
+            });
         }
+        // 3. Create the new map
+        return await tx.savedMap.create({
+            data: {
+                userId: req.user.id,
+                bookingId: bookingId || null,
+                name,
+                data,
+                area: area ? parseFloat(area) : null,
+                perimeter: perimeter ? parseFloat(perimeter) : null,
+                fileUrl
+            }
+        });
     });
     res.status(201).json(new ApiResponse_js_1.default(201, map, 'Map saved successfully'));
 });
@@ -58,7 +90,7 @@ exports.getClientSharedMaps = (0, asyncHandler_js_1.default)(async (req, res) =>
     if (!req.user)
         throw new ApiError_js_1.default(401, 'Not authorized');
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt((req.query.limit || req.query.limit)) || 10;
     const skip = (page - 1) * limit;
     const where = {
         booking: {
@@ -88,10 +120,10 @@ exports.getClientSharedMaps = (0, asyncHandler_js_1.default)(async (req, res) =>
     res.status(200).json(new ApiResponse_js_1.default(200, {
         maps,
         meta: {
-            totalItems: totalCount,
-            totalPages: Math.ceil(totalCount / limit),
-            currentPage: page,
-            limit: limit
+            total: totalCount,
+            page,
+            limit,
+            totalPages: Math.ceil(totalCount / limit)
         }
     }, 'Shared maps fetched successfully'));
 });

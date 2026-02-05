@@ -13,11 +13,12 @@ exports.getReports = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
         throw new ApiError_js_1.default(401, 'Not authorized');
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt((req.query.limit || req.query.limit)) || 10;
     const search = req.query.search;
-    const userId = req.user.id;
     const skip = (page - 1) * limit;
-    const where = { userId };
+    const where = req.user.role === 'client'
+        ? { client: { accountId: req.user.id } }
+        : { userId: req.user.id };
     if (search) {
         where.OR = [
             { title: { contains: search, mode: 'insensitive' } },
@@ -39,18 +40,21 @@ exports.getReports = (0, asyncHandler_js_1.default)(async (req, res) => {
     res.status(200).json(new ApiResponse_js_1.default(200, {
         reports,
         meta: {
-            totalItems: totalCount,
-            totalPages: Math.ceil(totalCount / limit),
-            currentPage: page,
-            limit: limit
+            total: totalCount,
+            page,
+            limit,
+            totalPages: Math.ceil(totalCount / limit)
         }
     }, 'Reports fetched successfully'));
 });
 exports.getReport = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
         throw new ApiError_js_1.default(401, 'Not authorized');
+    const where = req.user.role === 'client'
+        ? { id: req.params.id, client: { accountId: req.user.id } }
+        : { id: req.params.id, userId: req.user.id };
     const report = await prisma_js_1.prisma.report.findFirst({
-        where: { id: req.params.id, userId: req.user.id },
+        where,
         include: {
             client: { select: { id: true, name: true, email: true, phone: true } },
             booking: { select: { id: true, title: true, bookingDate: true } }
@@ -104,6 +108,23 @@ exports.createReport = (0, asyncHandler_js_1.default)(async (req, res) => {
         },
         include: { client: true }
     });
+    // Create notification for the client if they have an account
+    if (report.client.accountId) {
+        try {
+            await prisma_js_1.prisma.notification.create({
+                data: {
+                    userId: report.client.accountId,
+                    type: 'REPORT_PUBLISHED',
+                    title: 'New Report Published',
+                    message: `The survey report for "${report.title}" has been published.`,
+                    link: '/dashboard/reports'
+                }
+            });
+        }
+        catch (notifError) {
+            console.error('Error creating report notification:', notifError);
+        }
+    }
     res.status(201).json(new ApiResponse_js_1.default(201, report, 'Report created successfully'));
 });
 exports.updateReport = (0, asyncHandler_js_1.default)(async (req, res) => {
@@ -160,6 +181,23 @@ exports.updateReport = (0, asyncHandler_js_1.default)(async (req, res) => {
         data: updateData,
         include: { client: true }
     });
+    // Create notification for the client if they have an account
+    if (updatedReport.client.accountId) {
+        try {
+            await prisma_js_1.prisma.notification.create({
+                data: {
+                    userId: updatedReport.client.accountId,
+                    type: 'REPORT_UPDATED',
+                    title: 'Report Updated',
+                    message: `The survey report for "${updatedReport.title}" has been updated.`,
+                    link: '/dashboard/reports'
+                }
+            });
+        }
+        catch (notifError) {
+            console.error('Error creating report update notification:', notifError);
+        }
+    }
     res.status(200).json(new ApiResponse_js_1.default(200, updatedReport, 'Report updated successfully'));
 });
 exports.deleteReport = (0, asyncHandler_js_1.default)(async (req, res) => {

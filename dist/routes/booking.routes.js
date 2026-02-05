@@ -7,13 +7,14 @@ const express_1 = __importDefault(require("express"));
 const booking_controller_js_1 = require("../controllers/booking.controller.js");
 const auth_middleware_js_1 = require("../middlewares/auth.middleware.js");
 const router = express_1.default.Router();
+router.get('/calendar', booking_controller_js_1.getCalendarData);
+// Publicly allow creating a booking (controller handles guest vs logged-in)
+router.post('/', booking_controller_js_1.createBooking);
 router.use(auth_middleware_js_1.protect);
 router.get('/upcoming', booking_controller_js_1.getUpcomingBookings);
-router.get('/calendar', booking_controller_js_1.getCalendarData);
 router
     .route('/')
-    .get(booking_controller_js_1.getBookings)
-    .post(booking_controller_js_1.createBooking);
+    .get(booking_controller_js_1.getBookings);
 router
     .route('/:id')
     .get(booking_controller_js_1.getBooking)

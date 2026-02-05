@@ -14,5 +14,6 @@ router.post('/login', (0, validate_middleware_js_1.default)(auth_validation_js_1
 router.post('/refresh-token', auth_controller_js_1.refresh);
 router.get('/logout', auth_controller_js_1.logout);
 router.get('/me', auth_middleware_js_1.protect, auth_controller_js_1.getMe);
+router.post('/change-password', auth_middleware_js_1.protect, auth_controller_js_1.changePassword);
 exports.default = router;
 //# sourceMappingURL=auth.routes.js.map

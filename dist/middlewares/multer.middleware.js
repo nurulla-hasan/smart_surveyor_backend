@@ -6,9 +6,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.upload = void 0;
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 const storage = multer_1.default.diskStorage({
     destination: function (_req, _file, cb) {
-        cb(null, './public/temp');
+        const uploadPath = './public/temp';
+        // Ensure the directory exists
+        if (!fs_1.default.existsSync(uploadPath)) {
+            fs_1.default.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
     },
     filename: function (_req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

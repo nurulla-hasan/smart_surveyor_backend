@@ -28,6 +28,12 @@ class AuthService {
                 companyName: true,
                 licenseNo: true,
                 address: true,
+                experience: true,
+                location: true,
+                bio: true,
+                rating: true,
+                totalReviews: true,
+                profileImage: true,
                 createdAt: true,
                 updatedAt: true
             }
@@ -63,6 +69,12 @@ class AuthService {
                     companyName: true,
                     licenseNo: true,
                     address: true,
+                    experience: true,
+                    location: true,
+                    bio: true,
+                    rating: true,
+                    totalReviews: true,
+                    profileImage: true,
                     createdAt: true,
                     updatedAt: true
                 }
@@ -76,6 +88,22 @@ class AuthService {
         catch (error) {
             throw new ApiError_js_1.default(401, 'Invalid refresh token');
         }
+    }
+    static async changePassword(userId, currentPasswordText, newPasswordText) {
+        const user = await prisma_js_1.prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            throw new ApiError_js_1.default(404, 'User not found');
+        }
+        const isMatch = await (0, auth_js_1.comparePassword)(currentPasswordText, user.password);
+        if (!isMatch) {
+            throw new ApiError_js_1.default(401, 'Current password is incorrect');
+        }
+        const hashedNewPassword = await (0, auth_js_1.hashPassword)(newPasswordText);
+        await prisma_js_1.prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedNewPassword }
+        });
+        return true;
     }
 }
 exports.AuthService = AuthService;

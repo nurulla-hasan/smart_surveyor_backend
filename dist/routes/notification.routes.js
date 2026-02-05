@@ -10,6 +10,7 @@ const router = express_1.default.Router();
 router.use(auth_middleware_js_1.protect);
 router.get('/', notification_controller_js_1.getNotifications);
 router.patch('/read-all', notification_controller_js_1.markAllAsRead);
+router.delete('/clear-all', notification_controller_js_1.clearAllNotifications);
 router.patch('/:id/read', notification_controller_js_1.markAsRead);
 router.delete('/:id', notification_controller_js_1.deleteNotification);
 exports.default = router;
