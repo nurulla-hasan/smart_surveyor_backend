@@ -14,14 +14,16 @@ const router: Router = express.Router();
 
 router.get('/calendar', getCalendarData);
 
+// Publicly allow creating a booking (controller handles guest vs logged-in)
+router.post('/', createBooking);
+
 router.use(protect);
 
 router.get('/upcoming', getUpcomingBookings);
 
 router
   .route('/')
-  .get(getBookings)
-  .post(createBooking);
+  .get(getBookings);
 
 router
   .route('/:id')

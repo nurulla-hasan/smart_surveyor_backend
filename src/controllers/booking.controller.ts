@@ -112,93 +112,123 @@ export const getBooking = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const createBooking = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.user) throw new ApiError(401, 'Not authorized');
-
+  // If no user is logged in, we allow public booking by creating/finding a guest client
   const { 
     title, description, bookingDate, bookingTime, status, propertyAddress, 
     clientId, clientName, clientPhone, amountReceived, amountDue, paymentNote,
     surveyorId // Added for client portal bookings
   } = req.body;
 
-  const role = req.user.role;
   let targetUserId: string;
   let targetClientId: string;
   let finalStatus: BookingStatus;
 
-  if (role === 'client') {
-    // If client is booking, they should choose a surveyorId, otherwise fallback to the first surveyor
-    let surveyor;
-    if (surveyorId) {
-      surveyor = await prisma.user.findFirst({
-        where: { id: surveyorId, role: 'surveyor' }
-      });
-    } else {
-      surveyor = await prisma.user.findFirst({
-        where: { role: 'surveyor' }
-      });
-    }
-
-    if (!surveyor) {
-      throw new ApiError(404, 'No surveyor found to accept bookings');
-    }
-
-    targetUserId = surveyor.id;
-    finalStatus = 'pending';
-
-    // Find the client record for this user account and surveyor
-    const clientRecord = await prisma.client.findFirst({
-      where: { accountId: req.user.id, userId: targetUserId }
-    });
-
-    if (!clientRecord) {
-      // If no client record exists, create one automatically
-      const newClient = await prisma.client.create({
-        data: {
-          userId: targetUserId,
-          accountId: req.user.id,
-          name: (req.user as any).name,
-          email: req.user.email,
-          phone: (req.user as any).phone || 'N/A'
-        }
-      });
-      targetClientId = newClient.id;
-    } else {
-      targetClientId = clientRecord.id;
-    }
-  } else {
-    // Admin or Surveyor creating booking
-    targetUserId = (role === 'admin' && surveyorId) ? surveyorId : req.user.id;
-    finalStatus = (status as BookingStatus) || 'scheduled';
-
-    if (clientId) {
-      // If clientId is provided, verify it belongs to this surveyor
-      const existingClient = await prisma.client.findFirst({
-        where: { id: clientId, userId: targetUserId }
-      });
-      if (!existingClient) {
-        throw new ApiError(404, 'Selected client not found for this surveyor');
-      }
-      targetClientId = existingClient.id;
-    } else if (clientName) {
-      // Fallback to finding/creating by name if clientId not provided
-      let client = await prisma.client.findFirst({
-        where: { userId: targetUserId, name: clientName }
-      });
-      
-      if (!client) {
-        client = await prisma.client.create({
-          data: {
-            userId: targetUserId,
-            name: clientName,
-            email: `${Date.now()}@temp.com`, // More unique temp email
-            phone: clientPhone || 'N/A'
-          }
+  if (req.user) {
+    const role = req.user.role;
+    if (role === 'client') {
+      // If logged-in client is booking
+      let surveyor;
+      if (surveyorId) {
+        surveyor = await prisma.user.findFirst({
+          where: { id: surveyorId, role: 'surveyor' }
+        });
+      } else {
+        surveyor = await prisma.user.findFirst({
+          where: { role: 'surveyor' }
         });
       }
-      targetClientId = client.id;
+
+      if (!surveyor) {
+        throw new ApiError(404, 'No surveyor found to accept bookings');
+      }
+
+      targetUserId = surveyor.id;
+      finalStatus = 'pending';
+
+      const clientRecord = await prisma.client.findFirst({
+        where: { accountId: req.user.id, userId: targetUserId }
+      });
+
+      if (!clientRecord) {
+        const newClient = await prisma.client.create({
+          data: {
+            userId: targetUserId,
+            accountId: req.user.id,
+            name: (req.user as any).name || clientName,
+            email: req.user.email,
+            phone: (req.user as any).phone || clientPhone || 'N/A'
+          }
+        });
+        targetClientId = newClient.id;
+      } else {
+        targetClientId = clientRecord.id;
+      }
     } else {
-      throw new ApiError(400, 'Client ID or Client Name is required');
+      // Admin or Surveyor creating booking
+      targetUserId = (role === 'admin' && surveyorId) ? surveyorId : req.user.id;
+      finalStatus = (status as BookingStatus) || 'scheduled';
+
+      if (clientId) {
+        const existingClient = await prisma.client.findFirst({
+          where: { id: clientId, userId: targetUserId }
+        });
+        if (!existingClient) {
+          throw new ApiError(404, 'Selected client not found for this surveyor');
+        }
+        targetClientId = existingClient.id;
+      } else if (clientName) {
+        let client = await prisma.client.findFirst({
+          where: { 
+            userId: targetUserId, 
+            OR: [
+              { name: clientName, phone: clientPhone },
+              { phone: clientPhone }
+            ]
+          }
+        });
+        
+        if (!client) {
+          client = await prisma.client.create({
+            data: {
+              userId: targetUserId,
+              name: clientName,
+              email: `${Date.now()}@temp.com`,
+              phone: clientPhone || 'N/A'
+            }
+          });
+        }
+        targetClientId = client.id;
+      } else {
+        throw new ApiError(400, 'Client ID or Client Name is required');
+      }
     }
+  } else {
+    // Public/Guest Booking
+    if (!surveyorId) throw new ApiError(400, 'Surveyor ID is required for public booking');
+    if (!clientName || !clientPhone) throw new ApiError(400, 'Client Name and Phone are required');
+
+    targetUserId = surveyorId;
+    finalStatus = 'pending';
+
+    // Find or create a guest client record for this surveyor
+    let client = await prisma.client.findFirst({
+      where: { 
+        userId: targetUserId, 
+        phone: clientPhone
+      }
+    });
+
+    if (!client) {
+      client = await prisma.client.create({
+        data: {
+          userId: targetUserId,
+          name: clientName,
+          email: `${Date.now()}@guest.com`,
+          phone: clientPhone
+        }
+      });
+    }
+    targetClientId = client.id;
   }
 
   // Normalize date to UTC midnight using robust YYYY-MM-DD parsing
@@ -234,16 +264,18 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
   });
 
   // Create notification for the surveyor (only if the one creating it is NOT the surveyor themselves)
-  if (req.user.id !== targetUserId) {
+  const isSelfBooking = req.user && req.user.id === targetUserId;
+  
+  if (!isSelfBooking) {
     try {
-      const clientName = (req.user as any).name || 'A client';
+      const displayClientName = req.user ? ((req.user as any).name || 'A client') : (clientName || 'A guest client');
       const timeStr = bookingTime ? ` at ${bookingTime}` : '';
       await prisma.notification.create({
         data: {
           userId: targetUserId,
           type: 'NEW_BOOKING',
           title: 'New Booking Request',
-          message: `${clientName} has booked a new survey for ${normalizedDate.toLocaleDateString()}${timeStr}.`,
+          message: `${displayClientName} has booked a new survey for ${normalizedDate.toLocaleDateString()}${timeStr}.`,
           link: '/dashboard/bookings?filter=pending'
         }
       });
