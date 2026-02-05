@@ -13,10 +13,10 @@ exports.getReports = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
         throw new ApiError_js_1.default(401, 'Not authorized');
     const page = parseInt(req.query.page) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 10;
+    const limit = parseInt(req.query.limit) || 10;
     const search = req.query.search;
     const userId = req.user.id;
-    const skip = (page - 1) * pageSize;
+    const skip = (page - 1) * limit;
     const where = { userId };
     if (search) {
         where.OR = [
@@ -32,7 +32,7 @@ exports.getReports = (0, asyncHandler_js_1.default)(async (req, res) => {
             orderBy: { createdAt: 'desc' },
             include: { client: { select: { id: true, name: true, email: true } } },
             skip,
-            take: pageSize
+            take: limit
         }),
         prisma_js_1.prisma.report.count({ where })
     ]);
@@ -40,9 +40,9 @@ exports.getReports = (0, asyncHandler_js_1.default)(async (req, res) => {
         reports,
         meta: {
             totalItems: totalCount,
-            totalPages: Math.ceil(totalCount / pageSize),
+            totalPages: Math.ceil(totalCount / limit),
             currentPage: page,
-            pageSize: pageSize
+            limit: limit
         }
     }, 'Reports fetched successfully'));
 });

@@ -8,9 +8,9 @@ export const getMaps = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const page = parseInt(req.query.page as string) || 1;
-  const pageSize = parseInt(req.query.pageSize as string) || 10;
+  const limit = parseInt((req.query.limit || req.query.limit) as string) || 10;
   const search = req.query.search as string || '';
-  const skip = (page - 1) * pageSize;
+  const skip = (page - 1) * limit;
 
   const where: any = { userId: req.user.id };
 
@@ -35,7 +35,7 @@ export const getMaps = asyncHandler(async (req: Request, res: Response) => {
       },
       orderBy: { createdAt: 'desc' },
       skip,
-      take: pageSize
+      take: limit
     }),
     prisma.savedMap.count({ where })
   ]);
@@ -43,10 +43,10 @@ export const getMaps = asyncHandler(async (req: Request, res: Response) => {
   res.status(200).json(new ApiResponse(200, {
     maps,
     meta: {
-      totalItems: totalCount,
-      totalPages: Math.ceil(totalCount / pageSize),
-      currentPage: page,
-      pageSize: pageSize
+      total: totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit)
     }
   }, 'Maps fetched successfully'));
 });
@@ -97,8 +97,8 @@ export const getClientSharedMaps = asyncHandler(async (req: Request, res: Respon
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const page = parseInt(req.query.page as string) || 1;
-  const pageSize = parseInt(req.query.pageSize as string) || 10;
-  const skip = (page - 1) * pageSize;
+  const limit = parseInt((req.query.limit || req.query.limit) as string) || 10;
+  const skip = (page - 1) * limit;
 
   const where = {
     booking: {
@@ -122,7 +122,7 @@ export const getClientSharedMaps = asyncHandler(async (req: Request, res: Respon
       },
       orderBy: { createdAt: 'desc' },
       skip,
-      take: pageSize
+      take: limit
     }),
     prisma.savedMap.count({ where })
   ]);
@@ -130,10 +130,10 @@ export const getClientSharedMaps = asyncHandler(async (req: Request, res: Respon
   res.status(200).json(new ApiResponse(200, {
     maps,
     meta: {
-      totalItems: totalCount,
-      totalPages: Math.ceil(totalCount / pageSize),
-      currentPage: page,
-      pageSize: pageSize
+      total: totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit)
     }
   }, 'Shared maps fetched successfully'));
 });

@@ -13,7 +13,7 @@ export const getBookings = asyncHandler(async (req: Request, res: Response) => {
   const search = req.query.search as string | undefined;
   const clientId = req.query.clientId as string | undefined;
   const page = parseInt(req.query.page as string) || 1;
-  const pageSize = parseInt(req.query.pageSize as string) || 10;
+  const limit = parseInt((req.query.limit || req.query.limit) as string) || 10;
   
   // If user is a client, we should show bookings where they are the client
   const where: any = req.user.role === 'client' 
@@ -60,7 +60,7 @@ export const getBookings = asyncHandler(async (req: Request, res: Response) => {
     where.status = 'pending' as BookingStatus;
   }
 
-  const skip = (page - 1) * pageSize;
+  const skip = (page - 1) * limit;
 
   const [bookings, totalCount] = await Promise.all([
     prisma.booking.findMany({
@@ -72,7 +72,7 @@ export const getBookings = asyncHandler(async (req: Request, res: Response) => {
       },
       orderBy: { bookingDate: filter === 'past' ? 'desc' : 'asc' },
       skip,
-      take: pageSize
+      take: limit
     }),
     prisma.booking.count({ where })
   ]);
@@ -80,10 +80,10 @@ export const getBookings = asyncHandler(async (req: Request, res: Response) => {
   res.status(200).json(new ApiResponse(200, {
     bookings,
     meta: {
-      totalItems: totalCount,
-      totalPages: Math.ceil(totalCount / pageSize),
-      currentPage: page,
-      pageSize: pageSize
+      total: totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit)
     }
   }, 'Bookings fetched successfully'));
 });
@@ -115,7 +115,7 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const { 
-    title, description, bookingDate, status, propertyAddress, 
+    title, description, bookingDate, bookingTime, status, propertyAddress, 
     clientId, clientName, clientPhone, amountReceived, amountDue, paymentNote,
     surveyorId // Added for client portal bookings
   } = req.body;
@@ -223,6 +223,7 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
       title,
       description,
       bookingDate: normalizedDate,
+      bookingTime,
       status: finalStatus,
       propertyAddress,
       amountReceived: parseFloat(amountReceived) || 0,
@@ -236,12 +237,13 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
   if (req.user.id !== targetUserId) {
     try {
       const clientName = (req.user as any).name || 'A client';
+      const timeStr = bookingTime ? ` at ${bookingTime}` : '';
       await prisma.notification.create({
         data: {
           userId: targetUserId,
           type: 'NEW_BOOKING',
           title: 'New Booking Request',
-          message: `${clientName} has booked a new survey.`,
+          message: `${clientName} has booked a new survey for ${normalizedDate.toLocaleDateString()}${timeStr}.`,
           link: '/dashboard/bookings?filter=pending'
         }
       });
@@ -307,7 +309,8 @@ export const updateBooking = asyncHandler(async (req: Request, res: Response) =>
 
     if (data.status === 'scheduled') {
       title = 'Booking Approved';
-      message = `Your booking has been approved and scheduled for ${new Date(updatedBooking.bookingDate).toLocaleDateString()}.`;
+      const timeStr = updatedBooking.bookingTime ? ` at ${updatedBooking.bookingTime}` : '';
+      message = `Your booking has been approved and scheduled for ${new Date(updatedBooking.bookingDate).toLocaleDateString()}${timeStr}.`;
     } else if (data.status === 'cancelled') {
       title = 'Booking Cancelled';
       message = `Your booking has been cancelled.`;

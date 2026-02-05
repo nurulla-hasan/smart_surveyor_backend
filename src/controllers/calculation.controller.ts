@@ -8,11 +8,11 @@ export const getCalculations = asyncHandler(async (req: Request, res: Response) 
   if (!req.user) throw new ApiError(401, 'Not authorized');
 
   const page = parseInt(req.query.page as string) || 1;
-  const pageSize = parseInt(req.query.pageSize as string) || 10;
+  const limit = parseInt((req.query.limit || req.query.limit) as string) || 10;
   const search = req.query.search as string | undefined;
   const userId = req.user.id;
 
-  const skip = (page - 1) * pageSize;
+  const skip = (page - 1) * limit;
 
   const where: any = { userId };
 
@@ -29,7 +29,7 @@ export const getCalculations = asyncHandler(async (req: Request, res: Response) 
       orderBy: { createdAt: 'desc' },
       include: { booking: { select: { title: true, client: { select: { name: true } } } } },
       skip,
-      take: pageSize
+      take: limit
     }),
     prisma.calculation.count({ where })
   ]);
@@ -37,10 +37,10 @@ export const getCalculations = asyncHandler(async (req: Request, res: Response) 
   res.status(200).json(new ApiResponse(200, {
     calculations,
     meta: {
-      totalItems: totalCount,
-      totalPages: Math.ceil(totalCount / pageSize),
-      currentPage: page,
-      pageSize: pageSize
+      total: totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit)
     }
   }, 'Calculations fetched successfully'));
 });

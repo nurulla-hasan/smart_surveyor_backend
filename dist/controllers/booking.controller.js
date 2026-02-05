@@ -16,7 +16,7 @@ exports.getBookings = (0, asyncHandler_js_1.default)(async (req, res) => {
     const search = req.query.search;
     const clientId = req.query.clientId;
     const page = parseInt(req.query.page) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 10;
+    const limit = parseInt(req.query.limit) || 10;
     const userId = req.user.id;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -54,7 +54,7 @@ exports.getBookings = (0, asyncHandler_js_1.default)(async (req, res) => {
     else if (filter === 'pending') {
         where.status = 'pending';
     }
-    const skip = (page - 1) * pageSize;
+    const skip = (page - 1) * limit;
     const [bookings, totalCount] = await Promise.all([
         prisma_js_1.prisma.booking.findMany({
             where,
@@ -65,7 +65,7 @@ exports.getBookings = (0, asyncHandler_js_1.default)(async (req, res) => {
             },
             orderBy: { bookingDate: filter === 'past' ? 'desc' : 'asc' },
             skip,
-            take: pageSize
+            take: limit
         }),
         prisma_js_1.prisma.booking.count({ where })
     ]);
@@ -73,9 +73,9 @@ exports.getBookings = (0, asyncHandler_js_1.default)(async (req, res) => {
         bookings,
         meta: {
             totalItems: totalCount,
-            totalPages: Math.ceil(totalCount / pageSize),
+            totalPages: Math.ceil(totalCount / limit),
             currentPage: page,
-            pageSize: pageSize
+            limit: limit
         }
     }, 'Bookings fetched successfully'));
 });

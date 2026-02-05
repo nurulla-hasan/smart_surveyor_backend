@@ -81,7 +81,7 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const getSurveyors = asyncHandler(async (req: Request, res: Response) => {
-  const { location, sortBy, minExperience, search, page = 1, limit = 10 } = req.query;
+  const { location, sortBy, minExperience, search, page, limit } = req.query;
   
   const where: any = { role: 'surveyor' };
   
@@ -110,8 +110,9 @@ export const getSurveyors = asyncHandler(async (req: Request, res: Response) => 
     orderBy.createdAt = 'desc';
   }
 
-  const pageNumber = parseInt(page as string);
-  const limitNumber = parseInt(limit as string);
+  const pageNumber = page ? parseInt(page as string) : 1;
+  // Support both limit and limit for consistency across the app
+  const limitNumber = (limit) ? parseInt((limit) as string) : 10;
   const skip = (pageNumber - 1) * limitNumber;
 
   const [surveyors, total] = await Promise.all([
@@ -140,10 +141,10 @@ export const getSurveyors = asyncHandler(async (req: Request, res: Response) => 
   res.status(200).json(new ApiResponse(200, {
     surveyors,
     meta: {
-      totalItems: total,
-      totalPages: Math.ceil(total / limitNumber),
-      currentPage: pageNumber,
-      pageSize: limitNumber
+      total,
+      page: pageNumber,
+      limit: limitNumber,
+      totalPages: Math.ceil(total / limitNumber)
     }
   }, 'Surveyors fetched successfully'));
 });

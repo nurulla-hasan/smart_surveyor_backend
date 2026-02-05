@@ -13,7 +13,7 @@ exports.getClients = (0, asyncHandler_js_1.default)(async (req, res) => {
         throw new ApiError_js_1.default(401, 'Not authorized');
     const searchQuery = req.query.search;
     const page = parseInt(req.query.page) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 10;
+    const limit = parseInt(req.query.limit) || 10;
     const userId = req.user.id;
     const where = { userId };
     if (searchQuery) {
@@ -23,13 +23,13 @@ exports.getClients = (0, asyncHandler_js_1.default)(async (req, res) => {
             { phone: { contains: searchQuery, mode: 'insensitive' } }
         ];
     }
-    const skip = (page - 1) * pageSize;
+    const skip = (page - 1) * limit;
     const [clients, totalCount] = await Promise.all([
         prisma_js_1.prisma.client.findMany({
             where,
             orderBy: { createdAt: 'desc' },
             skip,
-            take: pageSize
+            take: limit
         }),
         prisma_js_1.prisma.client.count({ where })
     ]);
@@ -37,9 +37,9 @@ exports.getClients = (0, asyncHandler_js_1.default)(async (req, res) => {
         clients,
         meta: {
             totalItems: totalCount,
-            totalPages: Math.ceil(totalCount / pageSize),
+            totalPages: Math.ceil(totalCount / limit),
             currentPage: page,
-            pageSize: pageSize
+            limit: limit
         }
     }, 'Clients fetched successfully'));
 });

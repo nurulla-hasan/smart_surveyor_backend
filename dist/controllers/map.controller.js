@@ -12,14 +12,14 @@ exports.getMaps = (0, asyncHandler_js_1.default)(async (req, res) => {
     if (!req.user)
         throw new ApiError_js_1.default(401, 'Not authorized');
     const page = parseInt(req.query.page) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 10;
-    const skip = (page - 1) * pageSize;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
     const [maps, totalCount] = await Promise.all([
         prisma_js_1.prisma.savedMap.findMany({
             where: { userId: req.user.id },
             orderBy: { createdAt: 'desc' },
             skip,
-            take: pageSize
+            take: limit
         }),
         prisma_js_1.prisma.savedMap.count({ where: { userId: req.user.id } })
     ]);
@@ -27,9 +27,9 @@ exports.getMaps = (0, asyncHandler_js_1.default)(async (req, res) => {
         maps,
         meta: {
             totalItems: totalCount,
-            totalPages: Math.ceil(totalCount / pageSize),
+            totalPages: Math.ceil(totalCount / limit),
             currentPage: page,
-            pageSize: pageSize
+            limit: limit
         }
     }, 'Maps fetched successfully'));
 });
@@ -58,8 +58,8 @@ exports.getClientSharedMaps = (0, asyncHandler_js_1.default)(async (req, res) =>
     if (!req.user)
         throw new ApiError_js_1.default(401, 'Not authorized');
     const page = parseInt(req.query.page) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 10;
-    const skip = (page - 1) * pageSize;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
     const where = {
         booking: {
             client: {
@@ -81,7 +81,7 @@ exports.getClientSharedMaps = (0, asyncHandler_js_1.default)(async (req, res) =>
             },
             orderBy: { createdAt: 'desc' },
             skip,
-            take: pageSize
+            take: limit
         }),
         prisma_js_1.prisma.savedMap.count({ where })
     ]);
@@ -89,9 +89,9 @@ exports.getClientSharedMaps = (0, asyncHandler_js_1.default)(async (req, res) =>
         maps,
         meta: {
             totalItems: totalCount,
-            totalPages: Math.ceil(totalCount / pageSize),
+            totalPages: Math.ceil(totalCount / limit),
             currentPage: page,
-            pageSize: pageSize
+            limit: limit
         }
     }, 'Shared maps fetched successfully'));
 });
