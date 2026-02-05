@@ -81,7 +81,7 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const getSurveyors = asyncHandler(async (req: Request, res: Response) => {
-  const { location, sortBy, minExperience } = req.query;
+  const { location, sortBy, minExperience, search, page = 1, limit = 10 } = req.query;
   
   const where: any = { role: 'surveyor' };
   
@@ -93,6 +93,14 @@ export const getSurveyors = asyncHandler(async (req: Request, res: Response) => 
     where.experience = { gte: parseInt(minExperience as string) };
   }
 
+  if (search) {
+    where.OR = [
+      { name: { contains: search as string, mode: 'insensitive' } },
+      { companyName: { contains: search as string, mode: 'insensitive' } },
+      { bio: { contains: search as string, mode: 'insensitive' } }
+    ];
+  }
+
   const orderBy: any = {};
   if (sortBy === 'rating') {
     orderBy.rating = 'desc';
@@ -102,25 +110,42 @@ export const getSurveyors = asyncHandler(async (req: Request, res: Response) => 
     orderBy.createdAt = 'desc';
   }
 
-  const surveyors = await prisma.user.findMany({
-    where,
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      companyName: true,
-      licenseNo: true,
-      experience: true,
-      rating: true,
-      location: true,
-      profileImage: true,
-      bio: true
-    },
-    orderBy
-  });
+  const pageNumber = parseInt(page as string);
+  const limitNumber = parseInt(limit as string);
+  const skip = (pageNumber - 1) * limitNumber;
 
-  res.status(200).json(new ApiResponse(200, surveyors, 'Surveyors fetched successfully'));
+  const [surveyors, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        companyName: true,
+        licenseNo: true,
+        experience: true,
+        rating: true,
+        location: true,
+        profileImage: true,
+        bio: true
+      },
+      orderBy,
+      skip,
+      take: limitNumber,
+    }),
+    prisma.user.count({ where })
+  ]);
+
+  res.status(200).json(new ApiResponse(200, {
+    surveyors,
+    meta: {
+      totalItems: total,
+      totalPages: Math.ceil(total / limitNumber),
+      currentPage: pageNumber,
+      pageSize: limitNumber
+    }
+  }, 'Surveyors fetched successfully'));
 });
 
 export const getSurveyorProfile = asyncHandler(async (req: Request, res: Response) => {
