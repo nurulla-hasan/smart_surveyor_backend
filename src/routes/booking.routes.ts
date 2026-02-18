@@ -8,14 +8,14 @@ import {
   getUpcomingBookings,
   getCalendarData
 } from '../controllers/booking.controller.js';
-import { protect } from '../middlewares/auth.middleware.js';
+import { protect, optionalAuth } from '../middlewares/auth.middleware.js';
 
 const router: Router = express.Router();
 
 router.get('/calendar', getCalendarData);
 
 // Publicly allow creating a booking (controller handles guest vs logged-in)
-router.post('/', createBooking);
+router.post('/', optionalAuth, createBooking);
 
 router.use(protect);
 

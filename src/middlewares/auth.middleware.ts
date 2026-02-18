@@ -47,3 +47,28 @@ export const authorize = (...roles: string[]) => {
     next();
   };
 };
+
+export const optionalAuth = asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+  let token: string | undefined;
+  
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+  
+  if (!token) {
+    return next();
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken;
+    
+    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+    if (user) {
+      req.user = user;
+    }
+    next();
+  } catch (err) {
+    // If token is invalid, proceed as guest
+    next();
+  }
+});
