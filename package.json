@@ -2,7 +2,6 @@
   "name": "smart-surveyor-api",
   "version": "1.0.0",
   "description": "",
-  
   "main": "server.js",
   "scripts": {
     "start": "node dist/server.js",
@@ -27,6 +26,7 @@
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
+    "node-fetch": "^3.3.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
